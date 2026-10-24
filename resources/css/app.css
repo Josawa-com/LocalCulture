@@ -3,7 +3,190 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* ============================================================
+   CultureRaya Design System
+   Personality: "arsip budaya / museum digital" — hangat,
+   editorial, berwibawa. Warna & bentuk diturunkan dari logo
+   gunungan (emas + cokelat espresso).
+   ============================================================ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Typography */
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Fraunces', 'Georgia', serif;
+
+    /* Core palette — diturunkan dari logo */
+    --color-bark-50: #f7f4f1;
+    --color-bark-100: #ebe3db;
+    --color-bark-200: #d7c7b6;
+    --color-bark-300: #bca48a;
+    --color-bark-400: #a08261;
+    --color-bark-500: #8a6c4e;
+    --color-bark-600: #715540;
+    --color-bark-700: #5b4536;
+    --color-bark-800: #46362c;
+    --color-bark-900: #332822;
+    --color-bark-950: #1f1814;
+
+    /* Brass — aksen aksi & highlight (dari ornamen emas logo) */
+    --color-brass-50: #fbf7eb;
+    --color-brass-100: #f5ebcf;
+    --color-brass-200: #ead49c;
+    --color-brass-300: #dfba69;
+    --color-brass-400: #d4a53f;
+    --color-brass-500: #c68d26;
+    --color-brass-600: #a86e1e;
+    --color-brass-700: #87521c;
+    --color-brass-800: #6f431d;
+    --color-brass-900: #5e381c;
+    --color-brass-950: #341c0c;
+
+    /* Parchment — latar hangat pengganti putih/kelabu generik */
+    --color-parchment: #faf6ef;
+    --color-parchment-dark: #f1eadd;
+
+    /* Batik — merah tua untuk state destruktif/urgensi */
+    --color-batik-600: #a13c2e;
+    --color-batik-700: #863226;
+    --color-batik-800: #6e2a21;
+
+    /* Semantic */
+    --color-signal-success: #3d7a4f;
+    --color-signal-danger: #a13c2e;
+
+    /* Radius — tegas, tidak bubble */
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+
+    /* Shadows — lembut, kecokelatan, bukan abu-abu dingin */
+    --shadow-card: 0 1px 2px rgb(51 40 34 / 0.06), 0 2px 8px rgb(51 40 34 / 0.05);
+    --shadow-raised: 0 2px 4px rgb(51 40 34 / 0.08), 0 6px 16px rgb(51 40 34 / 0.08);
+
+    /* Motion */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ---------- Base ---------- */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-parchment text-bark-900 font-sans antialiased;
+        background-image:
+            radial-gradient(rgb(138 108 78 / 0.045) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    ::selection {
+        @apply bg-brass-200 text-bark-950;
+    }
+
+    /* Fokus keyboard yang selalu terlihat */
+    :focus-visible {
+        outline: 2px solid var(--color-brass-600);
+        outline-offset: 2px;
+        border-radius: var(--radius-xs);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/* ---------- Components ---------- */
+@layer components {
+    /* Tipografi display */
+    .display {
+        font-family: var(--font-display);
+        letter-spacing: -0.02em;
+    }
+
+    .display-lg {
+        font-family: var(--font-display);
+        letter-spacing: -0.02em;
+        font-weight: 600;
+    }
+
+    /* Kicker: label kecil uppercase di atas judul section */
+    .kicker {
+        @apply text-xs font-semibold uppercase tracking-[0.14em] text-bark-500;
+    }
+
+    /* Tombol — 5 varian dengan prioritas visual jelas */
+    .btn, .btn-primary, .btn-accent, .btn-secondary, .btn-ghost, .btn-danger {
+        @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-md px-4 py-2.5
+               text-sm font-semibold transition-colors duration-150
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+    .btn-primary {
+        @apply bg-bark-900 text-parchment hover:bg-bark-800 active:bg-bark-950;
+    }
+    .btn-accent {
+        @apply bg-brass-500 text-bark-950 hover:bg-brass-400 active:bg-brass-600;
+    }
+    .btn-secondary {
+        @apply border border-bark-300 bg-white/60 text-bark-800 hover:border-bark-400 hover:bg-white;
+    }
+    .btn-ghost {
+        @apply text-bark-600 hover:bg-bark-100 hover:text-bark-900;
+    }
+    .btn-danger {
+        @apply bg-batik-600 text-white hover:bg-batik-700;
+    }
+    .btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
+
+    /* Input */
+    .field {
+        @apply w-full rounded-md border border-bark-300 bg-white px-3.5 py-2.5 text-sm
+               text-bark-900 placeholder:text-bark-400
+               transition-colors focus:border-brass-600 focus:outline-none focus:ring-2 focus:ring-brass-600/25;
+    }
+    .field-label {
+        @apply mb-1.5 block text-sm font-medium text-bark-800;
+    }
+
+    /* Kartu: satu-satunya gaya kartu di seluruh aplikasi */
+    .panel {
+        @apply rounded-lg border border-bark-200 bg-white shadow-card;
+    }
+    .panel-hover {
+        @apply transition-[border-color,box-shadow] duration-150
+               hover:border-bark-300 hover:shadow-raised;
+    }
+
+    /* Divider ornamen: garis + diamond kecil, motif kawung disederhanakan */
+    .rule-ornament {
+        @apply flex items-center gap-3;
+    }
+    .rule-ornament::before,
+    .rule-ornament::after {
+        content: '';
+        @apply h-px flex-1 bg-bark-200;
+    }
+
+    /* Badge status */
+    .tag {
+        @apply inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium;
+    }
+}
+
+/* ---------- Utilities ---------- */
+@layer utilities {
+    .prose-culture {
+        @apply text-bark-800 leading-relaxed;
+    }
+    .prose-culture p + p {
+        @apply mt-4;
+    }
 }
