@@ -73,6 +73,17 @@
         scroll-behavior: smooth;
     }
 
+    /* ---------- SCROLLBAR KUSTOM: "gambar" menempel di thumb ----------
+       Browser tidak mengizinkan scrollbar diganti gambar bebas, JUGA
+       tidak bisa menaruh <img> di dalamnya. Trik yang mendekati:
+       1. Scrollbar asli disembunyikan total (width: 0) — yang terlihat
+          kini MURNI milik kita.
+       2. Elemen fixed #custom-scrollbar di tepi kanan menggantikannya:
+          track (garis tipis) + thumb berisi GAMBAR dari folder gambar
+          (public/gambar/scrollbar.png) yang bergerak mengikuti scroll,
+          persis perilaku thumb scrollbar asli.
+       JS kecil (resources/js/app.js) menggerakkan posisi thumb. ---------- */
+
     body {
         @apply bg-parchment text-bark-900 font-sans antialiased;
         background-image:
@@ -189,4 +200,67 @@
     .prose-culture p + p {
         @apply mt-4;
     }
+}
+
+/* ---------- Scrollbar kustom bergambar ---------- */
+/* Sembunyikan scrollbar asli (semua browser) */
+html {
+    scrollbar-width: none;           /* Firefox */
+    -ms-overflow-style: none;        /* IE/Edge lama */
+}
+html::-webkit-scrollbar {
+    width: 0;                        /* Chrome/Safari/Edge */
+    height: 0;
+}
+
+/* Pengganti: track tipis di tepi kanan + thumb bergambar
+   (gambar: public/gambar/Scrollbar.png — rasio 123x1536, sangat tinggi.
+   Tinggi thumb mengikuti rasio pada lebar jalur, dibatasi max 40vh agar
+   tetap ada ruang travel di layar pendek.) */
+#custom-scrollbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 18px;                     /* lebar jalur gambar (diperkecil) */
+    height: 100vh;
+    z-index: 9999;
+    /* TIDAK pointer-events:none — area ini interaktif:
+       bisa di-drag untuk scroll (mouse & sentuh) */
+}
+#custom-scrollbar .cs-track {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    right: 7px;                      /* posisi garis track */
+    width: 3px;
+    border-radius: 999px;
+    background: rgb(168 110 30 / .25); /* cokelat brass transparan */
+    pointer-events: none;
+}
+#custom-scrollbar .cs-thumb {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 18px;
+    height: auto;                    /* tinggi mengikuti rasio gambar */
+    max-height: 26vh;                /* jaga ruang travel */
+    will-change: top;
+    cursor: grab;                    /* isyarat bisa di-drag */
+}
+#custom-scrollbar .cs-thumb:active {
+    cursor: grabbing;
+}
+#custom-scrollbar .cs-thumb img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Sembunyikan pengganti di perangkat sentuh KECUALI thumb tetap bisa
+   disentuh — jendela kecil ini tetap interaktif untuk drag-scroll */
+@media (pointer: coarse) {
+    #custom-scrollbar .cs-track { display: none; }
 }

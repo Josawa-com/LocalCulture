@@ -165,7 +165,9 @@
 
             /* ---------- Scaling system (satuan em, meniru two26) ---------- */
             .t26 {
-                --t26-orange: #FF5400;
+                /* Aksen utama kini COKLAT (brass, dari logo CultureRaya) —
+                   cukup ubah variabel ini, semua elemen ikut */
+                --t26-orange: #A86E1E;
                 --t26-black: #1F1814;
                 --t26-white: #FDF8F5;
                 --t26-font-heading: var(--font-display, Georgia, serif);
@@ -280,6 +282,78 @@
             .t26-path-dark path { will-change: stroke-dashoffset; }
             .t26-path-mobile { display: none; }
 
+            /* ---------- Foto di garis (pure gambar, animasi "ditarik dari
+               balik garis invisible". MODE "pull": ditarik NAIK (garis
+               invisible di bawah). MODE "pull-left": ditarik ke KIRI
+               (garis invisible di KANAN — semar keluar dari kanan ke
+               kiri). MODE "fade": opacity saja.
+               STRUKTUR: .t26-line-photo = pembungkus TANPA overflow
+               (label bisa tampil di luar foto); overflow:hidden hanya
+               pada .t26-photo-window (jendela reveal). ---------- */
+            .t26-line-photo {
+                position: absolute;
+                z-index: 2; /* di atas garis, di bawah teks */
+                /* Lokasi diatur dua variabel ini (persen dari kotak garis) */
+                left: var(--photo-x, 8%);
+                top: var(--photo-y, 50%);
+                width: var(--photo-w, 15em);
+                /* Titik jangkar = BAWAH foto (menempel di garis). */
+                transform: translate(-50%, -100%);
+            }
+            /* Jendela reveal: INI yang overflow hidden */
+            .t26-photo-window {
+                overflow: hidden;
+                width: 100%;
+            }
+            /* Mode pull-left: jangkar = KANAN foto (menempel di garis
+               invisible vertikal di sisi kanan) */
+            .t26-line-photo.t26-pull-left {
+                transform: translate(-100%, -50%);
+            }
+            .t26-line-photo img {
+                width: 100%;
+                height: auto;
+                display: block;
+                /* Gambar yang DITARIK oleh JS (translateY/X 100% -> 0).
+                   PURE gambar — tanpa radius, tanpa shadow, tanpa apa pun. */
+                will-change: transform;
+            }
+            /* Label kecil di atas gambar: huruf renggang (letter-spacing
+               lebar), animasi fade-in mengikuti scroll (sinkron foto).
+               Varian .is-side (dipakai Semar): label di KIRI gambar,
+               teks rata kanan & bisa multi-baris (WAYANG / (SEMAR)). */
+            .t26-line-photo .t26-photo-label {
+                display: block;
+                margin-bottom: .9em;
+                margin-top: 1.2em; /* geser teks ke bawah (hanya teks) */
+                font-family: var(--t26-font-body);
+                font-size: 1.45em; /* lebih besar lagi (1.05 -> 1.45) */
+                font-weight: 600;
+                letter-spacing: .55em; /* jarak antar huruf LEBAR */
+                text-indent: .55em;    /* kompensasi spacing huruf terakhir agar tetap center */
+                text-transform: uppercase;
+                text-align: center;
+                color: var(--t26-black);
+                white-space: nowrap;
+                /* Animasi fade diatur JS via opacity label */
+                will-change: opacity;
+            }
+            /* Label samping (Semar): posisi di KIRI jendela foto, rata kanan.
+               Kini berada di LUAR jendela overflow (aman tak terpotong).
+               Override text-align/text-indent dari label dasar supaya
+               benar-benar RATA KANAN (bukan mewarisi center). */
+            .t26-line-photo.t26-pull-left .t26-photo-label {
+                position: absolute;
+                right: calc(100% + 1em); /* di kiri jendela */
+                top: 50%;
+                transform: translateY(-50%);
+                margin: 0;
+                text-align: right;   /* override center */
+                text-indent: 0;      /* override indent center */
+                white-space: normal; /* boleh 2 baris: WAYANG / (SEMAR) */
+                line-height: 1.6;
+            }
+
             /* ---------- Layers narasi: absolute menimpa sinar (persis two26:
                .services-layers absolute di atas .services-path) ---------- */
             .t26-layers {
@@ -354,7 +428,7 @@
                 right: -3em;
                 width: 21em;
                 padding: .9em 1.2em;
-                border: 1px solid rgb(255 84 0 / .55);
+                border: 1px solid rgb(168 110 30 / .55);
                 border-radius: 14px;
                 background-color: var(--t26-white);
                 box-shadow: 0 2px 4px rgb(31 24 20 / .06), 0 6px 16px rgb(31 24 20 / .07);
@@ -415,7 +489,7 @@
                 justify-content: center;
                 gap: .3em;
                 padding: 1.8em 1.2em;
-                border: 1px solid rgb(255 84 0 / .3);
+                border: 1px solid rgb(168 110 30 / .3);
                 border-radius: 16px;
                 background: var(--t26-white);
                 text-decoration: none;
@@ -425,7 +499,7 @@
             }
             .t26-island-card:hover {
                 border-color: var(--t26-orange);
-                box-shadow: 0 2px 4px rgb(31 24 20 / .06), 0 10px 24px rgb(255 84 0 / .13);
+                box-shadow: 0 2px 4px rgb(31 24 20 / .06), 0 10px 24px rgb(168 110 30 / .13);
                 transform: translateY(-3px);
             }
             .t26-island-name {
@@ -516,10 +590,10 @@
             <div class="t26-path t26-path-desktop">
                 <svg class="t26-path-light" width="100%" height="auto" viewBox="0 0 1616 2187" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M1601 15C1241.24 56.6913 1025.14 308.977 1139.71 377.393C1191.45 408.29 1240.74 339.444 1181.39 282.059C1075.45 179.627 937.582 215.243 741.458 298.287C701.638 315.147 622.383 350.59 552.298 410.201C487.298 465.486 487.725 549.018 534.765 563.77C581.804 578.523 632.714 579.634 681.058 587.392C729.731 595.202 767.011 617.17 797.836 657.756C833.766 705.065 838.864 772.034 862.127 825.767C890.491 891.283 966.341 911.2 1033.5 915.638C1130.56 922.052 1195.74 891.215 1286.16 899.069C1347.7 904.414 1457.75 932.208 1466.92 1059.42C1477.81 1210.68 1340.4 1252.99 1221.76 1286.05C1118.2 1314.91 997.775 1397.54 862.127 1334.5C757.468 1285.86 666.411 1293.34 650.401 1384.21C634.391 1475.07 710.968 1532.13 837.283 1542.81C963.598 1553.5 1146.44 1534.93 1181.39 1676C1226.53 1858.21 954.075 1839.5 797.836 1839.5C661.891 1839.5 422.283 1807.72 385.5 1700C340.427 1568 635.939 1584.37 465.5 1917C414.516 2016.5 310 2165.31 15 2165.31"
-                          stroke="#FF5400" stroke-width="34" stroke-linecap="round" opacity="0.25"/>
+                          stroke="#A86E1E" stroke-width="34" stroke-linecap="round" opacity="0.25"/>
                 </svg>
                 <svg class="t26-path-dark" width="100%" height="auto" viewBox="0 0 1616 2187" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path data-t26-draw stroke="#FF5400" stroke-width="34" stroke-linecap="round"
+                    <path data-t26-draw stroke="#A86E1E" stroke-width="34" stroke-linecap="round"
                           d="M1601 15C1241.24 56.6913 1025.14 308.977 1139.71 377.393C1191.45 408.29 1240.74 339.444 1181.39 282.059C1075.45 179.627 937.582 215.243 741.458 298.287C701.638 315.147 622.383 350.59 552.298 410.201C487.298 465.486 487.725 549.018 534.765 563.77C581.804 578.523 632.714 579.634 681.058 587.392C729.731 595.202 767.011 617.17 797.836 657.756C833.766 705.065 838.864 772.034 862.127 825.767C890.491 891.283 966.341 911.2 1033.5 915.638C1130.56 922.052 1195.74 891.215 1286.16 899.069C1347.7 904.414 1457.75 932.208 1466.92 1059.42C1477.81 1210.68 1340.4 1252.99 1221.76 1286.05C1118.2 1314.91 997.775 1397.54 862.127 1334.5C757.468 1285.86 666.411 1293.34 650.401 1384.21C634.391 1475.07 710.968 1532.13 837.283 1542.81C963.598 1553.5 1146.44 1534.93 1181.39 1676C1226.53 1858.21 954.075 1839.5 797.836 1839.5C661.891 1839.5 422.283 1807.72 385.5 1700C340.427 1568 635.939 1584.37 465.5 1917C414.516 2016.5 310 2165.31 15 2165.31"/>
                 </svg>
             </div>
@@ -528,12 +602,59 @@
             <div class="t26-path t26-path-mobile">
                 <svg viewBox="0 0 407 1556" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M542.705 10C465.727 48.981 92.8237 79.5116 92.8237 185.592C92.8237 291.673 352.712 336 346.322 440.868C339.933 545.736 104.278 543.251 92.8237 652.131C79.6013 777.82 353.287 765.564 346.322 898.5C339.358 1031.44 63.9084 911.5 68 1046C72.0916 1180.5 335.245 1170.41 328.309 1279.59C320.5 1402.5 -37.4522 1513.46 -135.704 1545.09"
-                          stroke="#FF5400" stroke-width="6"/>
+                          stroke="#A86E1E" stroke-width="6"/>
                 </svg>
                 <svg class="t26-path-mobile-dark" viewBox="0 0 407 1556" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path data-t26-draw d="M542.705 10C465.727 48.981 92.8237 79.5116 92.8237 185.592C92.8237 291.673 352.712 336 346.322 440.868C339.933 545.736 104.278 543.251 92.8237 652.131C79.6013 777.82 353.287 765.564 346.322 898.5C339.358 1031.44 63.9084 911.5 68 1046C72.0916 1180.5 335.245 1170.41 328.309 1279.59C320.5 1402.5 -37.4522 1513.46 -135.704 1545.09"
-                          stroke="#FF5400" stroke-width="6"/>
+                          stroke="#A86E1E" stroke-width="6"/>
                 </svg>
+            </div>
+
+            {{-- Foto candi di garis: antara subjudul 2 (p=0.31) & 3 (p=0.59),
+                 sisi kiri halaman. Animasi: muncul dari bawah ke atas
+                 mengikuti scroll (diatur di JS scrub, cek TITIK FOTO). --}}
+            <div class="t26-line-photo"
+                 data-t26-photo
+                 data-photo-start="0.42"
+                 style="--photo-x: 24%; --photo-y: 58%; --photo-w: 33em;">
+                <span class="t26-photo-label">CANDI BOROBUDUR</span>
+                <div class="t26-photo-window">
+                    <img src="{{ asset('gambar/CandiBorobudur-removebg-preview.png') }}"
+                         alt="Candi Borobudur" loading="lazy" decoding="async">
+                </div>
+            </div>
+
+            {{-- Foto tari di garis: KIRI-ATAS kotak, muncul sebelum foto
+                 candi. Animasi BEDA dari candi: FADE (opacity 0 -> 1,
+                 tanpa gerakan) via data-photo-mode="fade" — karena posisinya
+                 tinggi, reveal tarik-naik sempat terpotong selesai. --}}
+            <div class="t26-line-photo"
+                 data-t26-photo
+                 data-photo-start="0.14"
+                 data-photo-dur="0.1"
+                 data-photo-mode="fade"
+                 style="--photo-x: 17%; --photo-y: 18%; --photo-w: 27em;">
+                <span class="t26-photo-label">TARI KECAK BALI</span>
+                <div class="t26-photo-window">
+                    <img src="{{ asset('gambar/TariKecak.png') }}"
+                         alt="Tari Kecak Bali" loading="lazy" decoding="async">
+                </div>
+            </div>
+
+            {{-- Foto semar di garis: KANAN-BAWAH kotak utama, muncul di
+                 jalur kelokan bawah garis (x 60-73%, y ~80%). Animasi PULL
+                 seperti candi (ditarik naik dari balik garis). --}}
+            <div class="t26-line-photo t26-pull-left"
+                 data-t26-photo
+                 data-photo-start="0.82"
+                 data-photo-dur="0.14"
+                 data-photo-mode="pull-left"
+                 style="--photo-x: 97%; --photo-y: 90%; --photo-w: 19em;">
+                <span class="t26-photo-label">WAYANG<br>(SEMAR)</span>
+                <div class="t26-photo-window">
+                    <img src="{{ asset('gambar/WayangSemarBG.png') }}"
+                         alt="Semar" loading="lazy" decoding="async">
+                </div>
             </div>
 
             {{-- 5 layer narasi budaya --}}
@@ -550,31 +671,31 @@
                             <div class="t26-svg" data-t26-svg>
                                 @if($n['icon'] === 'islands')
                                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <circle cx="38" cy="42" r="18" stroke="#FF5400" stroke-width="5"/>
-                                        <circle cx="66" cy="62" r="12" stroke="#FF5400" stroke-width="5"/>
-                                        <path d="M12 78c12-8 24-8 36 0s24 8 36 0" stroke="#FF5400" stroke-width="5" stroke-linecap="round"/>
+                                        <circle cx="38" cy="42" r="18" stroke="#A86E1E" stroke-width="5"/>
+                                        <circle cx="66" cy="62" r="12" stroke="#A86E1E" stroke-width="5"/>
+                                        <path d="M12 78c12-8 24-8 36 0s24 8 36 0" stroke="#A86E1E" stroke-width="5" stroke-linecap="round"/>
                                     </svg>
                                 @elseif($n['icon'] === 'heritage')
                                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M20 44 50 18l30 26" stroke="#FF5400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M28 44v34M72 44v34M20 78h60" stroke="#FF5400" stroke-width="5" stroke-linecap="round"/>
-                                        <path d="M42 78V58h16v20" stroke="#FF5400" stroke-width="5" stroke-linejoin="round"/>
+                                        <path d="M20 44 50 18l30 26" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M28 44v34M72 44v34M20 78h60" stroke="#A86E1E" stroke-width="5" stroke-linecap="round"/>
+                                        <path d="M42 78V58h16v20" stroke="#A86E1E" stroke-width="5" stroke-linejoin="round"/>
                                     </svg>
                                 @elseif($n['icon'] === 'exchange')
                                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M22 38h44l-10-10M78 62H34l10 10" stroke="#FF5400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="50" cy="50" r="34" stroke="#FF5400" stroke-width="4" stroke-dasharray="6 8"/>
+                                        <path d="M22 38h44l-10-10M78 62H34l10 10" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="50" cy="50" r="34" stroke="#A86E1E" stroke-width="4" stroke-dasharray="6 8"/>
                                     </svg>
                                 @elseif($n['icon'] === 'preserve')
                                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M50 12 80 24v22c0 18-12 32-30 40-18-8-30-22-30-40V24Z" stroke="#FF5400" stroke-width="5" stroke-linejoin="round"/>
-                                        <path d="m38 50 8 8 16-16" stroke="#FF5400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M50 12 80 24v22c0 18-12 32-30 40-18-8-30-22-30-40V24Z" stroke="#A86E1E" stroke-width="5" stroke-linejoin="round"/>
+                                        <path d="m38 50 8 8 16-16" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 @else
                                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <circle cx="50" cy="42" r="20" stroke="#FF5400" stroke-width="5"/>
-                                        <path d="m62 58 14 22-12-4-4 12-14-22" stroke="#FF5400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="50" cy="42" r="6" fill="#FF5400"/>
+                                        <circle cx="50" cy="42" r="20" stroke="#A86E1E" stroke-width="5"/>
+                                        <path d="m62 58 14 22-12-4-4 12-14-22" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="50" cy="42" r="6" fill="#A86E1E"/>
                                     </svg>
                                 @endif
                             </div>
@@ -801,6 +922,32 @@
                     });
                 }
 
+                var PHOTO_DUR = 0.28; /* durasi animasi foto DEFAULT — PANJANG
+                                         agar reveal terasa pelan mengikuti
+                                         scroll (bisa dioverride per foto via
+                                         atribut data-photo-dur) */
+
+                /* FOTO DI GARIS (mis. Candi Borobudur, Tari Kecak): muncul
+                   saat garis mencapai titiknya. Titik, posisi, durasi &
+                   MODE animasi diatur lewat atribut elemen:
+                   - data-photo-start : p saat mulai (default 0.42)
+                   - data-photo-dur   : durasi (default PHOTO_DUR)
+                   - data-photo-mode  : "pull" (ditarik naik dari balik
+                     garis, DEFAULT) atau "fade" (opacity 0 -> 1, diam)
+                   - --photo-x/y/w    : posisi & lebar
+                   Dukungan BANYAK foto sekaligus.
+                   DIDEKLARASI SEBELUM reset() — reset() memakainya. */
+                var photos = Array.prototype.slice
+                    .call(section.querySelectorAll('[data-t26-photo]'))
+                    .map(function (el) {
+                        return {
+                            el: el,
+                            start: parseFloat(el.getAttribute('data-photo-start')) || 0.42,
+                            dur: parseFloat(el.getAttribute('data-photo-dur')) || PHOTO_DUR,
+                            mode: el.getAttribute('data-photo-mode') || 'pull',
+                        };
+                    });
+
                 function reset() {
                     /* Kondisi awal = kondisi "sebelum kotak aktif".
                        Logo TIDAK di-set width 0 (lebar dikelola CSS;
@@ -815,6 +962,29 @@
                             it.badge.style.opacity = '0';
                         }
                     });
+                    /* Foto di garis: kondisi awal sesuai mode —
+                       "pull": gambar tertarik penuh ke bawah garis,
+                       label transparan; "fade": KOTAK transparan penuh
+                       (opacity di kotak, label tak di-set sendiri agar
+                       tidak menginversi opacity parent) */
+                    photos.forEach(function (ph) {
+                        var img0 = ph.el.querySelector('img');
+                        if (img0) {
+                            if (ph.mode === 'fade') {
+                                img0.style.transform = 'none';
+                            } else if (ph.mode === 'pull-left') {
+                                img0.style.transform = 'translateX(100%)'; /* semua di kanan garis */
+                            } else {
+                                img0.style.transform = 'translateY(100%)'; /* semua di bawah garis */
+                            }
+                        }
+                        if (ph.mode === 'fade') {
+                            ph.el.style.opacity = '0';
+                        } else {
+                            var l0 = ph.el.querySelector('.t26-photo-label');
+                            if (l0) l0.style.opacity = '0';
+                        }
+                    });
                     /* Teks: kata-kata tersembunyi (CSS .t26-word sudah 0). */
                 }
                 if (!reduced) reset();
@@ -822,6 +992,53 @@
                 var current = 0;
                 var target = 0;
                 var ticking = false;
+
+                /* Animasi foto per MODE:
+                   - "pull" (Candi Borobudur): jendela (div .t26-line-photo)
+                     DIAM, overflow hidden memotong tepat di garis; gambar
+                     di DALAM jendela ditarik naik translateY 100% -> 0,
+                     terungkap mulai ujung atas s.d. bawah.
+                   - "pull-left" (Semar): jendela DIAM, garis invisible di
+                     KANAN (jangkar kanan); gambar ditarik ke KIRI
+                     translateX 100% -> 0, terungkap mulai ujung KANAN.
+                   - "fade" (Tari Kecak): TIDAK ada gerakan sama sekali —
+                     seluruh kotak (gambar + label) hanya opacity 0 -> 1
+                     mengikuti scroll. */
+                function applyPhoto(p) {
+                    photos.forEach(function (ph) {
+                        var local = (p - ph.start) / ph.dur;
+                        var t = clamp01(local);
+                        var e = 1 - Math.pow(1 - t, 3); /* cubic-out, melunak di akhir */
+
+                        if (ph.mode === 'fade') {
+                            /* FADE: seluruh kotak fade-in utuh (gambar +
+                               label bersamaan), tanpa translateY */
+                            ph.el.style.opacity = String(e);
+                            return;
+                        }
+
+                        var img = ph.el.querySelector('img');
+                        if (!img) return;
+                        if (ph.mode === 'pull-left') {
+                            /* PULL-LEFT: gambar ditarik ke KIRI 100% -> 0 */
+                            img.style.transform =
+                                'translateX(' + ((1 - e) * 100).toFixed(2) + '%)';
+                        } else {
+                            /* PULL (default): gambar ditarik NAIK 100% -> 0 */
+                            img.style.transform =
+                                'translateY(' + ((1 - e) * 100).toFixed(2) + '%)';
+                        }
+
+                        /* LABEL: fade-in transparan -> penuh, mengikuti scroll.
+                           Mulai sedikit setelah foto (0.12) agar label muncul
+                           saat gambar sudah mulai terlihat. Dua arah. */
+                        var label = ph.el.querySelector('.t26-photo-label');
+                        if (label) {
+                            var lt = clamp01((local - 0.12) / 0.4);
+                            label.style.opacity = String(lt);
+                        }
+                    });
+                }
 
                 function measure() {
                     var rect = section.getBoundingClientRect();
@@ -843,6 +1060,9 @@
                     draws.forEach(function (d) {
                         d.el.style.strokeDashoffset = d.len * (1 - clamp01(p));
                     });
+
+                    /* Foto di garis (Tari Kecak, Candi Borobudur) */
+                    applyPhoto(p);
 
                     var bp = boxProgress(p);
 
