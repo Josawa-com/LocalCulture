@@ -133,6 +133,64 @@ class QuizFlowTest extends TestCase
         $this->assertEquals(0, $answer->score);
     }
 
+    public function test_answer_submitted_as_string_is_still_scored_as_correct(): void
+    {
+        [$user, $quest] = $this->createQuestWithQuestion();
+
+        $this->actingAs($user)->post(route('quests.start', $quest));
+        $attempt = QuestAttempt::where('user_id', $user->id)->firstOrFail();
+        $this->get(route('quests.play', $attempt));
+
+        $answer = $attempt->answers()->firstOrFail();
+
+        // Browser selalu mengirim nilai form sebagai string.
+        $this->post(route('quests.answer', $attempt), [
+            'answer_row' => (string) $answer->id,
+            'selected_index' => '0',
+        ])->assertRedirect(route('quests.play', $attempt));
+
+        $answer->refresh();
+        $this->assertTrue($answer->is_correct);
+        $this->assertGreaterThan(0, $answer->score);
+    }
+
+    public function test_refreshing_play_page_does_not_skip_questions(): void
+    {
+        [$user, $quest] = $this->createQuestWithQuestion();
+
+        $this->actingAs($user)->post(route('quests.start', $quest));
+        $attempt = QuestAttempt::where('user_id', $user->id)->firstOrFail();
+
+        $this->get(route('quests.play', $attempt))->assertOk()->assertSee('Tari Saman berasal dari?');
+        $this->get(route('quests.play', $attempt))->assertOk()->assertSee('Tari Saman berasal dari?');
+
+        // Hanya satu baris jawaban yang dibuat, bukan dua.
+        $this->assertEquals(1, $attempt->answers()->count());
+    }
+
+    public function test_expired_open_question_is_recorded_as_timeout_on_refresh(): void
+    {
+        [$user, $quest] = $this->createQuestWithQuestion();
+
+        $this->actingAs($user)->post(route('quests.start', $quest));
+        $attempt = QuestAttempt::where('user_id', $user->id)->firstOrFail();
+        $this->get(route('quests.play', $attempt));
+
+        $answer = $attempt->answers()->firstOrFail();
+        $answer->update(['shown_at' => now()->subSeconds(10)]);
+
+        // Refresh setelah waktu habis → soal ditutup sebagai timeout, bukan diganti soal baru.
+        $this->get(route('quests.play', $attempt))->assertRedirect(route('quests.play', $attempt));
+
+        $answer->refresh();
+        $this->assertNotNull($answer->answered_at);
+        $this->assertFalse($answer->is_correct);
+        $this->assertEquals(0, $answer->score);
+
+        // Tidak ada soal tersisa → attempt selesai dan diarahkan ke hasil.
+        $this->get(route('quests.play', $attempt))->assertRedirect(route('quests.result', $attempt));
+    }
+
     public function test_user_cannot_access_others_attempt(): void
     {
         [$user, $quest] = $this->createQuestWithQuestion();

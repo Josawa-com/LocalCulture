@@ -51,26 +51,18 @@
                 @endforeach
             </ul>
 
-            {{-- User menu --}}
+            {{-- User menu: avatar & nama langsung membuka halaman profil --}}
             <div class="flex items-center gap-2">
                 @auth
                     @if(auth()->user()->role === 'admin')
                         <a href="{{ route('admin.dashboard') }}" class="hidden items-center gap-2 rounded-md bg-bark-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-bark-800 sm:flex">⚙️ Admin</a>
                     @endif
-                    <div class="relative group">
-                        <button class="inline-flex items-center gap-2 rounded-full border border-bark-300 bg-white/60 px-3 py-1.5 text-xs font-medium text-bark-800 transition hover:border-bark-400 hover:bg-white">
-                            <span class="grid h-6 w-6 place-items-center rounded-full bg-bark-800 text-xs text-white">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
-                            <span class="hidden max-w-24 truncate lg:block">{{ auth()->user()->name }}</span>
-                        </button>
-                        {{-- Dropdown --}}
-                        <div class="absolute right-0 mt-2 hidden min-w-[160px] rounded-md border border-bark-200 bg-white p-2 shadow-raised group-hover:block">
-                            <a href="{{ route('profile') }}" class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-bark-700 transition hover:bg-bark-100">Profil</a>
-                            <form method="POST" action="{{ route('logout') }}" class="mt-1">
-                                @csrf
-                                <button type="submit" class="w-full rounded-md px-3 py-2 text-left text-xs font-medium text-batik-700 transition hover:bg-rose-50">Keluar</button>
-                            </form>
-                        </div>
-                    </div>
+                    <a href="{{ route('profile') }}" @if(request()->routeIs('profile')) aria-current="page" @endif
+                       class="inline-flex items-center gap-2 rounded-full border bg-white/60 py-1.5 pl-1.5 pr-3 text-xs font-medium transition {{ request()->routeIs('profile') ? 'border-brass-500 text-bark-950 shadow-sm' : 'border-bark-300 text-bark-800 hover:border-bark-400 hover:bg-white' }}"
+                       aria-label="Buka profil {{ auth()->user()->name }}">
+                        <x-avatar :name="auth()->user()->name" :path="auth()->user()->avatar_path" size="xs"/>
+                        <span class="hidden max-w-24 truncate lg:block">{{ auth()->user()->name }}</span>
+                    </a>
                 @else
                     <a href="{{ route('login') }}" class="rounded-md px-3 py-2 text-xs font-medium text-bark-700 hover:bg-bark-100">Masuk</a>
                     <a href="{{ route('register') }}" class="btn-primary">Daftar</a>

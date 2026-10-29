@@ -18,6 +18,9 @@ class Question extends Model
     {
         return [
             'options' => 'array',
+            'correct_index' => 'integer',
+            'points' => 'integer',
+            'sort_order' => 'integer',
         ];
     }
 

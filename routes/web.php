@@ -74,9 +74,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
-// Admin
+// Admin — diakses lewat pengetikan URL /rezka
 Route::middleware(['auth', EnsureUserIsAdmin::class])
-    ->prefix('admin')
+    ->prefix('rezka')
     ->name('admin.')
     ->group(function () {
         Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
@@ -93,3 +93,8 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])
         Route::get('/permintaan', [Admin\InterestRequestAdminController::class, 'index'])->name('requests.index');
         Route::patch('/permintaan/{interestRequest}', [Admin\InterestRequestAdminController::class, 'update'])->name('requests.update');
     });
+
+// Alias lama /admin → /rezka agar tautan lama tetap berfungsi
+Route::middleware(['auth', EnsureUserIsAdmin::class])->get('/admin/{any?}', function () {
+    return redirect()->route('admin.dashboard');
+})->where('any', '.*')->name('admin.alias');

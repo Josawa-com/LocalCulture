@@ -15,14 +15,14 @@ class AdminPanelTest extends TestCase
 
     public function test_guest_cannot_access_admin(): void
     {
-        $this->get('/admin')->assertRedirect(route('login'));
+        $this->get('/rezka')->assertRedirect(route('login'));
     }
 
     public function test_regular_user_cannot_access_admin(): void
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/admin')->assertForbidden();
+        $this->actingAs($user)->get('/rezka')->assertForbidden();
         $this->actingAs($user)->get(route('admin.quests.index'))->assertForbidden();
     }
 
@@ -35,6 +35,7 @@ class AdminPanelTest extends TestCase
                 'type' => $type,
                 'title' => "Kuis {$type} Test",
                 'description' => 'Deskripsi',
+                'question_count' => 3,
                 'available_on' => today()->toDateString(),
                 'time_limit' => 7,
                 'is_active' => 1,
@@ -51,10 +52,13 @@ class AdminPanelTest extends TestCase
         $quest = Quest::factory()->create();
 
         $this->actingAs($admin)->post(route('admin.questions.store', $quest), [
-            'question' => 'Angklung dari mana?',
-            'options' => ['Jawa Barat', 'Bali', 'Papua', 'Aceh'],
-            'correct_index' => 0,
-            'points' => 100,
+            'questions' => [
+                [
+                    'question' => 'Angklung dari mana?',
+                    'options' => ['Jawa Barat', 'Bali', 'Papua', 'Aceh'],
+                    'correct_index' => 0,
+                ],
+            ],
         ])->assertRedirect();
 
         $this->assertDatabaseHas('questions', ['quest_id' => $quest->id, 'correct_index' => 0]);

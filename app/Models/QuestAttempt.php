@@ -20,6 +20,10 @@ class QuestAttempt extends Model
         return [
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
+            'status' => 'integer',
+            'total_score' => 'integer',
+            'correct_count' => 'integer',
+            'total_time_ms' => 'integer',
         ];
     }
 

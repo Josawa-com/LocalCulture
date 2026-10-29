@@ -84,10 +84,14 @@ class DatabaseSeeder extends Seeder
         // Quest harian (hari ini) & mingguan
         $daily = Quest::create([
             'type' => 'daily', 'title' => 'Kuis Harian Budaya', 'description' => 'Uji pengetahuan budayamu hari ini!',
+            'subtitle' => 'Rumah adat, tarian & kuliner Nusantara',
+            'question_count' => 10,
             'available_on' => today(), 'ends_at' => today()->endOfDay(), 'time_limit' => 7,
         ]);
         $weekly = Quest::create([
             'type' => 'weekly', 'title' => 'Kuis Mingguan Budaya Nusantara', 'description' => 'Tantangan mingguan seputar budaya Indonesia.',
+            'subtitle' => 'Warisan budaya & alat musik tradisional',
+            'question_count' => 10,
             'available_on' => now()->startOfWeek(), 'ends_at' => now()->endOfWeek(), 'time_limit' => 7,
         ]);
 

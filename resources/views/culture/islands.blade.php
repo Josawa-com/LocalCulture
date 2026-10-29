@@ -37,7 +37,7 @@
             'left'   => 'Pengaruh Budaya',
             'right'  => 'dari Luar',
             'desc'   => 'Seiring berjalannya waktu, interaksi antarmasyarakat dan bangsa lain turut memperkaya kebudayaan Indonesia. Pengaruh Hindu-Buddha, Islam, serta budaya Eropa dan Asia lainnya berinteraksi dengan tradisi lokal dan menghasilkan berbagai bentuk kebudayaan yang unik.',
-            'side' => 'left', 'offset' => '-14%', 'dy' => '320px', 'icon' => 'exchange',
+            'side' => 'left', 'offset' => '-14%', 'dy' => '380px', 'icon' => 'exchange',
         ],
         [
             'num'    => '4',

@@ -4,17 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\Quest;
 use App\Models\QuestAttempt;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class QuestController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        // Empat kategori tetap, selalu tampil berurutan walau kosong.
+        $quests = Quest::available()
+            ->withCount('questions')
+            ->orderBy('available_on', 'desc')
+            ->get()
+            ->groupBy('type');
+
+        $sections = collect(Quest::TYPES)->map(fn (string $label, string $type) => [
+            'type' => $type,
+            'label' => $label,
+            'description' => Quest::TYPE_DESCRIPTIONS[$type] ?? '',
+            'quests' => $quests->get($type, collect()),
+        ]);
+
         return view('quests.index', [
-            'dailyQuests' => Quest::available()->where('type', 'daily')->orderBy('available_on', 'desc')->get(),
-            'weeklyQuests' => Quest::available()->where('type', 'weekly')->orderBy('available_on', 'desc')->get(),
+            'sections' => $sections,
+            // Riwayat attempt user, dipakai untuk menandai kuis yang sudah selesai.
+            'attempts' => $request->user()
+                ? $request->user()->questAttempts()->get()->keyBy('quest_id')
+                : collect(),
         ]);
     }
 
@@ -43,7 +61,7 @@ class QuestController extends Controller
     }
 
     /** Halaman main: server mencatat shown_at saat soal dikirim. */
-    public function play(Request $request, QuestAttempt $attempt): View
+    public function play(Request $request, QuestAttempt $attempt): View|RedirectResponse
     {
         $this->authorizeAttempt($request, $attempt);
 
@@ -51,27 +69,46 @@ class QuestController extends Controller
             return redirect()->route('quests.result', $attempt);
         }
 
-        $question = $attempt->quest->questions()
-            ->whereNotIn('id', $attempt->answers()->pluck('question_id'))
-            ->orderBy('sort_order')
-            ->first();
+        // Lanjutkan soal yang masih terbuka (mis. halaman di-refresh) agar soal tidak terlewat.
+        $answer = $attempt->answers()->whereNull('answered_at')->latest('id')->first();
 
-        if (! $question) {
-            return $this->finish($attempt);
+        if ($answer) {
+            $question = $answer->question;
+
+            // Timer tetap dihitung dari shown_at pertama, jadi refresh tidak menambah waktu.
+            $remainingMs = ($attempt->quest->time_limit * 1000) - (now()->getTimestampMs() - $answer->shown_at->getTimestampMs());
+
+            if ($remainingMs <= 0) {
+                $this->recordTimeout($attempt, $answer, $question);
+
+                return redirect()->route('quests.play', $attempt);
+            }
+        } else {
+            $question = $attempt->quest->questions()
+                ->whereNotIn('id', $attempt->answers()->pluck('question_id'))
+                ->orderBy('sort_order')
+                ->first();
+
+            if (! $question) {
+                return $this->finish($attempt);
+            }
+
+            // Record when this question was served (server-side timer source of truth)
+            $answer = $attempt->answers()->create([
+                'question_id' => $question->id,
+                'shown_at' => now(),
+            ]);
+
+            $remainingMs = $attempt->quest->time_limit * 1000;
         }
-
-        // Record when this question was served (server-side timer source of truth)
-        $answer = $attempt->answers()->create([
-            'question_id' => $question->id,
-            'shown_at' => now(),
-        ]);
 
         return view('quests.play', [
             'attempt' => $attempt,
             'question' => $question,
             'answerRowId' => $answer->id,
-            'timeLimit' => $attempt->quest->time_limit,
-            'questionNumber' => $attempt->answers()->count(),
+            // Sisa waktu dibulatkan ke atas agar hitungan mundur di layar tidak lebih cepat dari server.
+            'timeLimit' => max(1, (int) ceil($remainingMs / 1000)),
+            'questionNumber' => $attempt->answers()->whereNotNull('answered_at')->count() + 1,
             'totalQuestions' => $attempt->quest->questions()->count(),
         ]);
     }
@@ -85,8 +122,15 @@ class QuestController extends Controller
             'selected_index' => ['required', 'integer', 'between:0,3'],
         ]);
 
-        $answer = $attempt->answers()->where('id', $validated['answer_row'])->whereNull('answered_at')->firstOrFail();
+        // Abaikan kiriman ganda (mis. tombol diklik dua kali) — soal sudah terjawab.
+        $answer = $attempt->answers()->where('id', $validated['answer_row'])->whereNull('answered_at')->first();
+
+        if (! $answer) {
+            return redirect()->route('quests.play', $attempt);
+        }
+
         $question = $answer->question;
+        $selectedIndex = (int) $validated['selected_index'];
 
         // SERVER-SIDE timing: hitung dari shown_at, bukan dari klaim client
         $timeMs = (int) max(0, (now()->getTimestampMs() - $answer->shown_at->getTimestampMs()));
@@ -95,13 +139,13 @@ class QuestController extends Controller
             return $this->recordTimeout($attempt, $answer, $question);
         }
 
-        $isCorrect = $validated['selected_index'] === $question->correct_index;
+        $isCorrect = $selectedIndex === (int) $question->correct_index;
         // Skor: benar + bonus kecepatan (maks 50% dari poin)
         $speedBonus = $isCorrect ? (int) floor($question->points * 0.5 * max(0, 1 - $timeMs / ($attempt->quest->time_limit * 1000))) : 0;
         $score = $isCorrect ? $question->points + $speedBonus : 0;
 
         $answer->update([
-            'selected_index' => $validated['selected_index'],
+            'selected_index' => $selectedIndex,
             'is_correct' => $isCorrect,
             'time_ms' => $timeMs,
             'score' => $score,
@@ -121,7 +165,12 @@ class QuestController extends Controller
     {
         $this->authorizeAttempt($request, $attempt);
 
-        $answer = $attempt->answers()->where('id', $request->integer('answer_row'))->whereNull('answered_at')->firstOrFail();
+        $answer = $attempt->answers()->where('id', $request->integer('answer_row'))->whereNull('answered_at')->first();
+
+        // Sudah terjawab (mis. kiriman ganda) — lanjut saja ke soal berikutnya.
+        if (! $answer) {
+            return redirect()->route('quests.play', $attempt);
+        }
 
         return $this->recordTimeout($attempt, $answer, $answer->question);
     }

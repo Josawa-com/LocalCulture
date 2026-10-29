@@ -242,18 +242,15 @@ html::-webkit-scrollbar {
     right: 0;
     top: 0;
     width: 18px;
-    height: auto;                    /* tinggi mengikuti rasio gambar */
-    max-height: 26vh;                /* jaga ruang travel */
-    will-change: top;
+    height: 120px;                   /* tinggi thumb tetap — ringkas */
+    will-change: transform;
     cursor: grab;                    /* isyarat bisa di-drag */
-}
-#custom-scrollbar .cs-thumb:active {
-    cursor: grabbing;
 }
 #custom-scrollbar .cs-thumb img {
     width: 100%;
-    height: auto;
-    object-fit: contain;
+    height: 100%;                    /* isi persis tinggi thumb */
+    object-fit: contain;             /* gambar utuh tanpa ter-crop */
+    object-position: center;
     display: block;
     user-select: none;
     pointer-events: none;
