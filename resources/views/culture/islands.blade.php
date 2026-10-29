@@ -477,51 +477,184 @@
                 margin-bottom: 1.4em;
                 text-align: center;
             }
-            .t26-islands-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1em;
+            /* ---------- PETA PULAU: kotak TAK TERLIHAT berisi gambar-gambar
+               yang saling menimpa. Tiap gambar diposisikan sendiri
+               (absolute) memakai --x / --y, jadi menggeser satu gambar
+               tidak mempengaruhi gambar lain.
+               Posisi diatur di config/island_maps.php ---------- */
+            .pulau-stage {
+                position: relative;
+                width: 100%;
+                max-width: 62em;
+                margin: 0 auto;
+                aspect-ratio: var(--pulau-aspect, 1.4);
+                /* Kotak tidak terlihat: tanpa latar, tanpa garis tepi. */
+                background: transparent;
+                border: 0;
+                /* Sedikit ruang agar gambar teratas tidak terpotong saat hover */
+                overflow: visible;
             }
-            .t26-island-card {
+
+            .pulau-item {
+                position: absolute;
+                /* Desktop: posisi PERSIS seperti yang diatur di config
+                   (x/y = titik tengah gambar). Tidak ada penyesuaian apa pun,
+                   jadi tata letak desktop tidak berubah. */
+                left: calc(var(--x) * 1%);
+                top: calc(var(--y) * 1%);
+                /* Lebar gambar = persen dari LEBAR KOTAK. Karena kotak ikut
+                   mengecil di layar sempit, gambar ikut mengecil dengan
+                   proporsi yang sama — tata letak tak berubah, tak bertumpuk. */
+                width: calc(var(--w) * 1%);
+                z-index: var(--z, 1);
+                /* Titik acuan = TENGAH gambar, jadi x/y menandai pusatnya. */
+                transform: translate(-50%, -50%) scale(1);
+                transform-origin: center center;
+                text-decoration: none;
+                transition: transform .32s cubic-bezier(.25, 1, .5, 1),
+                            filter .32s cubic-bezier(.25, 1, .5, 1);
+                will-change: transform;
+                -webkit-tap-highlight-color: transparent;
+                /* Area klik mengikuti GAMBAR (bentuk & rotasinya), bukan kotak
+                   pembungkus yang lebih besar. Ini mencegah satu pulau
+                   "mencuri" klik dari pulau lain yang tampak di bawahnya. */
+                pointer-events: none;
+            }
+
+            .pulau-item img {
+                display: block;
+                width: 100%;
+                height: auto;
+                /* ROTASI MANUAL per gambar (--r, satuan derajat).
+                   Diputar pada <img> — bukan pada kotaknya — supaya kartu
+                   keterangan (nama pulau + jumlah provinsi) tetap tegak
+                   dan posisinya tidak ikut miring.
+                   Nilai positif = searah jarum jam, negatif = berlawanan. */
+                transform: rotate(var(--r, 0deg));
+                transform-origin: center center;
+                /* Bayangan tipis agar gambar menyatu dengan latar putih */
+                filter: drop-shadow(0 2px 6px rgb(31 24 20 / .10));
+                transition: filter .32s cubic-bezier(.25, 1, .5, 1);
+                /* Gambar inilah yang menjadi sasaran klik & hover. */
+                pointer-events: auto;
+                cursor: pointer;
+            }
+
+            /* Saat kursor menyentuh: gambar DIPERBESAR & naik ke depan */
+            .pulau-item:hover,
+            .pulau-item:focus-visible {
+                transform: translate(-50%, -50%) scale(1.18);
+                z-index: 90;
+                outline: none;
+            }
+            .pulau-item:hover img,
+            .pulau-item:focus-visible img {
+                filter: drop-shadow(0 8px 22px rgb(168 110 30 / .35));
+            }
+
+            /* Keterangan jumlah provinsi — muncul saat disentuh kursor */
+            .pulau-tip {
+                position: absolute;
+                left: 50%;
+                bottom: calc(100% + .2em);
+                transform: translate(-50%, .4em);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                justify-content: center;
-                gap: .3em;
-                padding: 1.8em 1.2em;
-                border: 1px solid rgb(168 110 30 / .3);
-                border-radius: 16px;
-                background: var(--t26-white);
-                text-decoration: none;
-                transition: border-color .2s var(--ease-out-quart, ease-out),
-                            box-shadow .2s var(--ease-out-quart, ease-out),
-                            transform .2s var(--ease-out-quart, ease-out);
+                gap: .1em;
+                padding: .55em 1em;
+                border: 1px solid rgb(168 110 30 / .55);
+                border-radius: 10px;
+                background: var(--t26-white, #fff);
+                box-shadow: 0 2px 4px rgb(31 24 20 / .08), 0 8px 20px rgb(31 24 20 / .10);
+                font-family: var(--t26-font-body);
+                white-space: nowrap;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity .22s ease, transform .22s cubic-bezier(.25, 1, .5, 1), visibility .22s;
+                z-index: 2;
             }
-            .t26-island-card:hover {
-                border-color: var(--t26-orange);
-                box-shadow: 0 2px 4px rgb(31 24 20 / .06), 0 10px 24px rgb(168 110 30 / .13);
-                transform: translateY(-3px);
+            /* Segitiga kecil penunjuk ke gambar */
+            .pulau-tip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 7px solid transparent;
+                border-top-color: var(--t26-white, #fff);
+                filter: drop-shadow(0 1px 0 rgb(168 110 30 / .35));
             }
-            .t26-island-name {
+            .pulau-tip-name {
                 font-family: var(--t26-font-heading);
-                font-size: 1.35em;
+                font-size: .95em;
                 font-weight: 600;
                 text-transform: uppercase;
-                color: var(--t26-black);
-                text-align: center;
-                line-height: 100%;
+                letter-spacing: .02em;
+                color: var(--t26-black, #1f1814);
+                line-height: 1.1;
             }
-            .t26-island-meta {
+            .pulau-tip-count {
+                font-size: .78em;
+                font-weight: 600;
+                color: var(--t26-orange, #a86e1e);
+                line-height: 1.2;
+            }
+            .pulau-item:hover .pulau-tip,
+            .pulau-item:focus-visible .pulau-tip {
+                opacity: 1;
+                visibility: visible;
+                transform: translate(-50%, 0);
+            }
+
+            /* Pulau yang posisinya di bagian ATAS kotak: keterangan tampil
+               di BAWAH gambar agar tidak menabrak judul di atasnya. */
+            .pulau-tip--below {
+                bottom: auto;
+                top: calc(100% + .2em);
+                transform: translate(-50%, -.4em);
+            }
+            .pulau-tip--below::after {
+                top: auto;
+                bottom: 100%;
+                border-top-color: transparent;
+                border-bottom-color: var(--t26-white, #fff);
+                filter: drop-shadow(0 -1px 0 rgb(168 110 30 / .35));
+            }
+            .pulau-item:hover .pulau-tip--below,
+            .pulau-item:focus-visible .pulau-tip--below {
+                transform: translate(-50%, 0);
+            }
+
+            .pulau-hint {
+                margin-top: 1.2em;
                 font-family: var(--t26-font-body);
                 font-size: .78em;
-                font-weight: 500;
-                color: var(--t26-orange);
+                text-align: center;
+                color: var(--t26-black, #1f1814);
+                opacity: .45;
             }
 
             /* ---------- Responsif ---------- */
             @media screen and (max-width: 991px) {
                 .t26-layers { gap: 10em; }
                 .t26-text { white-space: normal; max-width: 8em; }
+
+                /* Tablet & HP: posisi tiap gambar TIDAK diubah sama sekali
+                   (tidak ada jepitan). Yang menyesuaikan hanya ukuran kotak
+                   peta di bawah. Dengan begitu tata letak di HP identik
+                   dengan desktop, hanya lebih kecil. */
+                .pulau-stage {
+                    max-width: 100%;
+                    /* Seluruh kotak peta diperkecil SERAGAM agar semua gambar
+                       muat di layar. Posisi antar-gambar tidak diubah sama
+                       sekali — jadi tidak ada gambar yang bergeser sendiri. */
+                    width: calc(100% * var(--pulau-fit-scale, 1));
+                    margin-inline: 0;
+                    transform: translateX(calc(var(--pulau-fit-shift, 0) * 1%));
+                }
+                .t26-islands { overflow-x: clip; }
             }
             @media screen and (max-width: 767px) {
                 .t26-heading { font-size: 1.35em; }
@@ -544,6 +677,25 @@
                 }
                 .t26-layer { font-size: .72em; height: auto; }
                 .t26-badge { display: none; }
+
+                /* Peta pulau di layar kecil: UKURAN PULAU TIDAK DIPERBESAR.
+                   Yang menyesuaikan hanya kotak penampungnya — kotak menyempit
+                   mengikuti lebar layar, lalu semua gambar ikut mengecil dengan
+                   proporsi yang sama, jadi tata letaknya identik dengan desktop
+                   dan tidak saling menimpa. */
+                .pulau-stage {
+                    /* Kotak memakai lebar penuh area konten (bukan dibatasi em). */
+                    max-width: 100%;
+                }
+
+                .t26-islands { padding: 2.5em .5em 3.5em; }
+                .t26-islands-inner { max-width: 100%; }                /* Beri kotak lebih banyak ruang di layar sempit, supaya
+                   gambarnya tetap sebesar mungkin tanpa mengubah proporsi. */
+                .t26-islands { padding: 2.5em .5em 3.5em; }
+                .t26-islands-inner { max-width: 100%; }
+                .pulau-tip { padding: .4em .7em; }
+                .pulau-tip-name { font-size: .8em; }
+                .pulau-tip-count { font-size: .7em; }
             }
             @media screen and (max-width: 479px) {
                 .t26-heading { font-size: 1.05em; }
@@ -718,14 +870,41 @@
         <div class="t26-islands">
             <div class="t26-islands-inner">
                 <span class="t26-islands-label">Mulai Jelajah dari Pulau</span>
-                <div class="t26-islands-grid">
-                    @foreach($islands as $island)
-                        <a href="{{ route('culture.island', $island) }}" class="t26-island-card">
-                            <span class="t26-island-name">{{ $island->name }}</span>
-                            <span class="t26-island-meta">{{ $island->provinces_count }} provinsi · {{ $island->regencies_count }} kab/kota</span>
-                        </a>
+
+                {{-- Peta pulau: kotak TAK TERLIHAT berisi gambar-gambar dari
+                     public/Pulau/ yang saling menimpa. Posisi tiap gambar
+                     diatur manual (x / y / w / z) di config/island_maps.php.
+                     Sentuh gambar -> membesar + muncul jumlah provinsi. --}}
+                <div class="pulau-stage"
+                     style="--pulau-aspect: {{ $islandMapAspect }}; --pulau-fit-scale: {{ $islandMapFit['scale'] }}; --pulau-fit-shift: {{ $islandMapFit['shift'] }};">
+                    @foreach($islandMaps as $map)
+                        @php
+                            $tag = $map['link'] ? 'a' : 'div';
+                            $tipId = 'pulau-tip-'.Str::slug($map['label']);
+                            // Pulau di bagian atas kotak -> keterangan di bawah gambar.
+                            $tipBelow = $map['y'] < 40;
+                        @endphp
+
+                        <{{ $tag }}
+                            @if($map['link']) href="{{ $map['link'] }}" @endif
+                            class="pulau-item"
+                            style="--x: {{ $map['x'] }}; --y: {{ $map['y'] }}; --w: {{ $map['w'] }}; --h: {{ $map['h'] }}; --wr: {{ $map['wr'] }}; --hr: {{ $map['hr'] }}; --r: {{ $map['r'] }}deg; --z: {{ $map['z'] }};"
+                            aria-describedby="{{ $tipId }}">
+
+                            <img src="{{ $map['url'] }}" alt="Peta {{ $map['label'] }}"
+                                 loading="lazy" decoding="async" width="480" height="320">
+
+                            <span class="pulau-tip {{ $tipBelow ? 'pulau-tip--below' : '' }}" id="{{ $tipId }}" role="tooltip">
+                                <span class="pulau-tip-name">{{ $map['label'] }}</span>
+                                @if($map['province_count'])
+                                    <span class="pulau-tip-count">{{ $map['province_count'] }} provinsi</span>
+                                @endif
+                            </span>
+                        </{{ $tag }}>
                     @endforeach
                 </div>
+
+                <p class="pulau-hint">Sentuh salah satu pulau untuk mulai menjelajah.</p>
             </div>
         </div>
     </section>
@@ -1179,10 +1358,139 @@
                 kick();
             }
 
+            /* ---------- 4. Ketepatan klik peta pulau ----------
+               Tiap gambar berbentuk persegi, padahal bentuk pulaunya tidak.
+               Akibatnya bagian transparan sebuah gambar bisa "mencuri" klik
+               dari pulau lain yang tampak di bawahnya (pulau jadi tidak bisa
+               ditekan). Di sini klik diuji ke saluran alpha (transparansi)
+               gambar: hanya piksel yang benar-benar berisi pulau yang
+               dianggap sasaran. */
+            function initIslandHitTest() {
+                var stage = document.querySelector('.pulau-stage');
+                if (!stage) return;
+
+                var items = Array.prototype.slice.call(stage.querySelectorAll('.pulau-item'));
+                if (!items.length) return;
+
+                var cache = {};
+                var THRESHOLD = 20; /* 0-255; di bawah ini dianggap kosong */
+
+                /* Peta alpha gambar, dibuat sekali lalu disimpan. */
+                function alphaMap(img) {
+                    var key = img.currentSrc || img.src;
+                    if (cache[key]) return cache[key];
+
+                    var rec = { w: 0, h: 0, data: null };
+
+                    if (img.naturalWidth) {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        var ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.drawImage(img, 0, 0);
+                        try {
+                            rec = {
+                                w: canvas.width,
+                                h: canvas.height,
+                                data: ctx.getImageData(0, 0, canvas.width, canvas.height).data
+                            };
+                        } catch (e) {
+                            /* Gambar dari domain lain -> anggap semua terisi */
+                        }
+                    }
+
+                    cache[key] = rec;
+                    return rec;
+                }
+
+                function alphaAt(img, nx, ny) {
+                    var rec = alphaMap(img);
+                    if (!rec.data) return 255;
+
+                    var px = Math.min(rec.w - 1, Math.max(0, Math.round(nx * rec.w)));
+                    var py = Math.min(rec.h - 1, Math.max(0, Math.round(ny * rec.h)));
+
+                    return rec.data[(py * rec.w + px) * 4 + 3];
+                }
+
+                function zOf(el) {
+                    var z = parseFloat(el.style.getPropertyValue('--z'));
+                    return isNaN(z) ? 0 : z;
+                }
+
+                /* Cari gambar paling atas yang pikselnya berisi pulau. */
+                function hitTest(clientX, clientY) {
+                    var best = null;
+                    var bestZ = -Infinity;
+
+                    items.forEach(function (el) {
+                        var img = el.querySelector('img');
+                        if (!img || !img.naturalWidth) return;
+
+                        var w = img.offsetWidth;
+                        var h = img.offsetHeight;
+                        if (!w || !h) return;
+
+                        var rect = img.getBoundingClientRect();
+                        var cx = rect.left + rect.width / 2;
+                        var cy = rect.top + rect.height / 2;
+
+                        var deg = parseFloat(el.style.getPropertyValue('--r')) || 0;
+                        var rad = deg * Math.PI / 180;
+
+                        /* Balikkan rotasi: posisi klik -> koordinat gambar */
+                        var dx = clientX - cx;
+                        var dy = clientY - cy;
+                        var back = -rad;
+                        var rx = dx * Math.cos(back) - dy * Math.sin(back);
+                        var ry = dx * Math.sin(back) + dy * Math.cos(back);
+
+                        /* Skala saat ini (mis. saat hover 1.18x) */
+                        var cos = Math.abs(Math.cos(rad));
+                        var sin = Math.abs(Math.sin(rad));
+                        var bboxW = w * cos + h * sin;
+                        var scale = bboxW > 0 ? rect.width / bboxW : 1;
+
+                        var halfW = w * scale / 2;
+                        var halfH = h * scale / 2;
+
+                        if (Math.abs(rx) > halfW || Math.abs(ry) > halfH) return;
+
+                        var nx = (rx / halfW + 1) / 2;
+                        var ny = (ry / halfH + 1) / 2;
+
+                        if (alphaAt(img, nx, ny) <= THRESHOLD) return;
+
+                        var z = zOf(el);
+                        if (z > bestZ) {
+                            bestZ = z;
+                            best = el;
+                        }
+                    });
+
+                    return best;
+                }
+
+                stage.addEventListener('click', function (e) {
+                    var target = e.target.closest ? e.target.closest('.pulau-item') : null;
+                    var hit = hitTest(e.clientX, e.clientY);
+
+                    if (!hit || hit === target) return;
+
+                    /* Klik jatuh di bagian transparan -> arahkan ke pulau yang benar. */
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    var href = hit.getAttribute('href');
+                    if (href) window.location.href = href;
+                }, true);
+            }
+
             function init() {
                 initWelcomeOrb();
                 initMagneticHeading();
                 initServicesScrub();
+                initIslandHitTest();
             }
 
             if (document.readyState === 'loading') {
