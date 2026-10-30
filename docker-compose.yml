@@ -1,0 +1,78 @@
+name: cultureraya
+
+services:
+  # ------------------------------------------------------------
+  # APLIKASI — Laravel 13 + PHP-FPM + nginx
+  # ------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cultureraya:latest
+    container_name: cultureraya-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    environment:
+      # Peran kontainer: app | queue | scheduler
+      - CONTAINER_ROLE=app
+      - APP_ENV=production
+      - APP_DEBUG=false
+      # APP_KEY dibuat otomatis & disimpan di volume storage/app.
+      # Isi manual bila ingin kunci yang sudah Anda miliki:
+      # - APP_KEY=base64:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/html/database/database.sqlite
+      - DB_MIGRATE=true
+      - SESSION_DRIVER=database
+      - CACHE_STORE=database
+      - QUEUE_CONNECTION=database
+    volumes:
+      # Data yang HARUS bertahan di luar kontainer:
+      # - database SQLite (kuis, user, kunjungan, dsb.)
+      # - file yang diunggah (avatar) & log
+      - cultureraya-database:/var/www/html/database
+      # Berisi unggahan (avatar) + app_key. Folder cache/view/session
+      # TIDAK ikut ter-mount, jadi tetap aman.
+      - cultureraya-storage:/var/www/html/storage/app
+    healthcheck:
+      test: ['CMD-SHELL', 'php -r "exit((int) !@file_get_contents(\"http://127.0.0.1/up\"));"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on: []
+
+  # ------------------------------------------------------------
+  # OPSIONAL — MySQL untuk penggunaan dengan beban besar.
+  # Nyalakan dengan:  docker compose --profile mysql up -d
+  # lalu di docker-compose ini ganti environment aplikasi:
+  #   DB_CONNECTION=mysql
+  #   DB_HOST=mysql
+  #   DB_PORT=3306
+  #   DB_DATABASE=cultureraya
+  #   DB_USERNAME=cultureraya
+  #   DB_PASSWORD=<sama dengan MYSQL_PASSWORD di bawah>
+  # ------------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: cultureraya-mysql
+    restart: unless-stopped
+    profiles: ['mysql']
+    environment:
+      - MYSQL_DATABASE=cultureraya
+      - MYSQL_USER=cultureraya
+      - MYSQL_PASSWORD=${DB_PASSWORD:-ubah-saya}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-ubah-juga-saya}
+    volumes:
+      - cultureraya-mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cultureraya-database:
+  cultureraya-storage:
+  cultureraya-mysql:

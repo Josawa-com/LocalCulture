@@ -1,0 +1,61 @@
+# File yang TIDAK dikirim ke dalam image.
+# Makin sedikit konteks, makin cepat build.
+
+# Dependensi (dipasang ulang di dalam image)
+/vendor
+/node_modules
+
+# Rahasia & konfigurasi lokal
+/.env
+/.env.*
+!/.env.example
+
+# Data yang harus tetap di luar image (di-mount sebagai volume)
+/database/*.sqlite
+/database/*.sqlite-journal
+/storage/app/private
+/storage/app/public
+/storage/logs
+/storage/pail
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/testing
+/storage/framework/views
+/bootstrap/cache
+
+# Hasil build (dibangun di dalam image)
+/public/build
+/public/hot
+/public/storage
+
+# Git & tooling
+/.git
+/.gitignore
+/.gitattributes
+/.phpunit.result.cache
+/.mcp.json
+/boost.json
+/opencode.json
+/.ai
+
+# Dokumen
+/README.md
+/AGENTS.md
+/CLAUDE.md
+
+# Skrip lokal
+/dev.sh
+/share.sh
+
+# Docker itu sendiri (tidak diperlukan di dalam image)
+/Dockerfile
+/docker-compose.yml
+/.dockerignore
+
+# Tes
+/tests
+/phpunit.xml
+
+# OS
+/Thumbs.db
+.DS_Store

@@ -20,6 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'avatar_path',
         'island_id',
         'province_id',

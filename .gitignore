@@ -26,3 +26,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .env.backup-mysql
+
+# PID server dev (dibuat oleh dev.sh)
+/storage/dev-servers.pid
+/storage/share-server.pid

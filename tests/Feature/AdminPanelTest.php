@@ -26,6 +26,31 @@ class AdminPanelTest extends TestCase
         $this->actingAs($user)->get(route('admin.quests.index'))->assertForbidden();
     }
 
+    public function test_role_can_be_assigned_through_the_model(): void
+    {
+        // Regresi: `role` sempat tidak ada di $fillable sehingga
+        // User::create(['role' => 'admin']) diam-diam menghasilkan 'user'.
+        $user = User::create([
+            'name' => 'Admin Baru',
+            'email' => 'admin-baru@example.test',
+            'password' => 'rahasia-sekali',
+            'role' => 'admin',
+        ]);
+
+        $this->assertSame('admin', $user->fresh()->role);
+        $this->assertTrue($user->fresh()->isAdmin());
+
+        $this->actingAs($user)->get('/rezka')->assertOk();
+    }
+
+    public function test_seeded_admin_account_is_actually_an_admin(): void
+    {
+        // Seeder menulis 'role' => 'admin'; pastikan benar-benar tersimpan.
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->assertSame('admin', $admin->fresh()->role);
+    }
+
     public function test_admin_can_create_daily_and_weekly_quest(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

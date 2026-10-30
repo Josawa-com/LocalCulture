@@ -73,41 +73,6 @@
         scroll-behavior: smooth;
     }
 
-    /* ---------- SCROLLBAR NORMAL (bawaan browser) ----------
-       Tidak ada gambar, tidak ada elemen pengganti. Scrollbar asli
-       browser dipakai apa adanya, hanya diwarnai agar serasi dengan
-       palet aplikasi (cokelat brass di atas parchment). ---------- */
-
-    /* Firefox & Chrome 121+ — lebar bawaan (normal), hanya diwarnai */
-    html {
-        scrollbar-color: var(--color-bark-300) var(--color-parchment-dark);
-    }
-
-    /* Chrome / Edge / Safari (WebKit & Blink) */
-    html::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-    }
-    html::-webkit-scrollbar-track {
-        background: var(--color-parchment-dark);
-    }
-    html::-webkit-scrollbar-thumb {
-        background-color: var(--color-bark-300);
-        border-radius: 999px;
-        /* Celah transparan agar thumb terlihat ramping */
-        border: 3px solid var(--color-parchment-dark);
-        background-clip: padding-box;
-    }
-    html::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-bark-400);
-    }
-    html::-webkit-scrollbar-thumb:active {
-        background-color: var(--color-bark-500);
-    }
-    html::-webkit-scrollbar-corner {
-        background: var(--color-parchment-dark);
-    }
-
     body {
         @apply bg-parchment text-bark-900 font-sans antialiased;
         background-image:
