@@ -34,203 +34,253 @@ if (islandSelect && provinceSelect) {
 
 
 /* ============================================================
-   SCROLLBAR KUSTOM BERGAMBAR
-   Scrollbar asli disembunyikan via CSS; elemen #custom-scrollbar
-   menggantikannya: thumb berisi gambar (public/gambar/scrollbar.png)
-   bergerak mengikuti scroll, persis perilaku thumb asli.
+   SMOOTH SCROLL (lerp)
+   Roda mouse & keyboard tidak menempel langsung ke halaman, tetapi
+   menggerakkan "target" yang dikejar posisi nyata secara perlahan.
+
+   PENGATURAN (ubah bila perlu):
+     SMOOTHNESS : 0.075 -> makin KECIL makin LAMBAT & halus
+     WHEEL_STEP : pengali jarak satu putaran roda
+     KEY_STEP   : porsi tinggi layar untuk PageUp/PageDown/Spasi
+
+   Prinsip keamanan:
+   - Tidak pernah mencegat scroll bila halaman memang tidak bisa
+     di-scroll, bila kursor di atas elemen yang punya scroll sendiri,
+     atau bila itu scroll horizontal (trackpad).
+   - Scroll dari sumber lain (scrollbar native, anchor #, tombol
+     Back/Forward, skrip lain) SELALU dihormati: animasi berhenti
+     dan posisinya diikuti.
+   - `prefers-reduced-motion` -> tidak aktif sama sekali.
    ============================================================ */
 (function () {
-    // Sisipkan markup scrollbar kustom sekali di akhir body
-    if (document.getElementById('custom-scrollbar')) {
+    'use strict';
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         return;
     }
 
-    const wrap = document.createElement('div');
-    wrap.id = 'custom-scrollbar';
-    wrap.setAttribute('aria-hidden', 'true');
-    wrap.innerHTML = `
-        <div class="cs-track"></div>
-        <div class="cs-thumb">
-            <img src="/gambar/Scrollbar.png" alt="">
-        </div>
-    `;
-    document.body.appendChild(wrap);
+    // Perangkat sentuh punya momentum bawaan — biarkan native.
+    if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        return;
+    }
 
-    const thumb = wrap.querySelector('.cs-thumb');
+    var SMOOTHNESS = 0.075;
+    var WHEEL_STEP = 1.0;
+    var KEY_STEP = 0.85;
 
-    let ticking = false;
+    var target = window.scrollY;      // posisi yang dituju
+    var current = window.scrollY;     // posisi yang sedang ditampilkan
+    var applied = window.scrollY;     // nilai terakhir yang kita kirim ke browser
+    var maxScroll = 0;
+    var raf = null;
+    var running = false;
 
-    const update = () => {
-        const doc = document.documentElement;
-        const maxScroll = doc.scrollHeight - window.innerHeight;
+    /* Halaman memakai `scroll-behavior: smooth` di CSS. Itu akan membuat
+       setiap scrollTo() kita ikut dianimasikan CSS sehingga bertabrakan
+       dengan lerp. Karena kita yang mengatur animasi, matikan. */
+    document.documentElement.style.scrollBehavior = 'auto';
 
+    function refreshMax() {
+        maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    }
+
+    function clamp(v) {
+        return Math.min(maxScroll, Math.max(0, v));
+    }
+
+    function applyScroll(y) {
+        applied = y;
+        window.scrollTo(0, y);
+    }
+
+    function stop() {
+        if (raf !== null) {
+            cancelAnimationFrame(raf);
+            raf = null;
+        }
+        running = false;
+    }
+
+    /* Resync ke posisi halaman saat ini (dipakai setelah scroll eksternal). */
+    function resync() {
+        target = window.scrollY;
+        current = window.scrollY;
+        applied = window.scrollY;
+    }
+
+    /* Apakah node berada di dalam elemen yang punya scroll sendiri?
+       (dropdown, panel, dsb — jangan diambil alih) */
+    function ownsScroll(node) {
+        if (!(node instanceof Element)) {
+            return false;
+        }
+
+        for (var el = node; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+            var style = window.getComputedStyle(el);
+
+            if ((style.overflowY === 'auto' || style.overflowY === 'scroll')
+                && el.scrollHeight > el.clientHeight + 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function tick() {
+        /* Deteksi lompatan eksternal yang terjadi SEBELUM event 'scroll'
+           sempat menyala (mis. user men-drag scrollbar native). Tanpa ini
+           animasi akan menarik halaman kembali ke posisi lama. */
+        if (Math.abs(window.scrollY - applied) > 3) {
+            stop();
+            resync();
+
+            return;
+        }
+
+        current += (target - current) * SMOOTHNESS;
+
+        // Sudah sangat dekat -> hentikan agar tidak bergetar.
+        if (Math.abs(target - current) < 0.4) {
+            current = target;
+            running = false;
+            raf = null;
+            applyScroll(clamp(current));
+
+            return;
+        }
+
+        applyScroll(clamp(current));
+        raf = requestAnimationFrame(tick);
+    }
+
+    function start() {
+        if (running) {
+            return;
+        }
+        running = true;
+        raf = requestAnimationFrame(tick);
+    }
+
+    function nudge(delta) {
+        refreshMax();
+        target = clamp(target + delta);
+        start();
+    }
+
+    /* ---------- Roda mouse / trackpad ---------- */
+    window.addEventListener('wheel', function (e) {
+        // Zoom (ctrl+wheel), sudah dicegat pihak lain, atau elemen ber-scroll sendiri.
+        if (e.ctrlKey || e.defaultPrevented || ownsScroll(e.target)) {
+            return;
+        }
+
+        // Scroll horizontal (trackpad) -> biarkan native.
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            return;
+        }
+
+        // Halaman memang tidak bisa di-scroll -> jangan dicegat.
+        refreshMax();
         if (maxScroll <= 0) {
-            thumb.style.top = '0px';
             return;
         }
 
-        const progress = window.scrollY / maxScroll;
-        const trackTop = 8;                                   /* sama dgn .cs-track top */
-        const trackBottom = 8;                                /* sama dgn .cs-track bottom */
-        const travel = window.innerHeight - trackTop - trackBottom - thumb.offsetHeight;
+        // Mode 0 = piksel, 1 = baris, 2 = halaman.
+        var unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? window.innerHeight : 1);
 
-        thumb.style.top = `${trackTop + progress * Math.max(0, travel)}px`;
-    };
-
-    const onScroll = () => {
-        if (!ticking) {
-            ticking = true;
-            requestAnimationFrame(() => {
-                update();
-                ticking = false;
-            });
-        }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-
-    // Posisi awal (setelah gambar termuat agar tinggi thumb akurat)
-    if (thumb.querySelector('img')) {
-        thumb.querySelector('img').addEventListener('load', update, { once: true });
-    }
-    update();
-})();
-
-/* ============================================================
-   DRAG SCROLLBAR KUSTOM: thumb bisa di-drag (mouse & sentuh)
-   untuk menggulir halaman — meniru perilaku scrollbar asli.
-   Juga tap/klik pada jalur = lompat ke posisi tersebut.
-   ARSITEKTUR BEBAS-THRASH:
-   - Geometri di-cache; measureGeo hanya saat init/resize/load/
-     drag-start — TIDAK di dalam event scroll.
-   - Event scroll HANYA memperbarui transform thumb (murah).
-   - Saat drag, thumb di-set langsung di moveDrag (bukan lewat
-     reaksi event scroll) — satu sumber kebenaran, tanpa loop.
-   ============================================================ */
-(function () {
-    const wrap = document.getElementById('custom-scrollbar');
-    const thumb = wrap ? wrap.querySelector('.cs-thumb') : null;
-    if (!wrap || !thumb) {
-        return;
-    }
-
-    const doc = document.documentElement;
-
-    let dragging = false;
-    let startY = 0;
-    let startScrollY = 0;
-
-    /* Geometri ter-cache — di-refresh hanya pada momen langka */
-    let geo = { trackTop: 8, travel: 100, maxScroll: 0, thumbH: 120 };
-
-    const measureGeo = () => {
-        const wrapRect = wrap.getBoundingClientRect();
-        const thumbH = thumb.offsetHeight || 120;
-        const trackTop = 8;
-        const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
-        const travel = Math.max(1, wrapRect.height - trackTop - 8 - thumbH);
-        geo = { trackTop, travel, maxScroll, thumbH };
-    };
-
-    /* Murah: hanya transform — tanpa layout read.
-       progress DI-CLAMP 0..1 supaya thumb tidak pernah keluar layar
-       (penyebab "scrollbar tenggelam" saat tinggi halaman berubah). */
-    const setThumbFromScrollY = (scrollY) => {
-        const progress = geo.maxScroll > 0
-            ? Math.min(1, Math.max(0, scrollY / geo.maxScroll))
-            : 0;
-        thumb.style.transform = `translateY(${geo.trackTop + progress * geo.travel}px)`;
-    };
-
-    /* --- Drag mulai (mouse & sentuh) --- */
-    const startDrag = (clientY) => {
-        dragging = true;
-        startY = clientY;
-        startScrollY = window.scrollY;
-        measureGeo(); /* cache SEKALI di awal drag */
-        setThumbFromScrollY(window.scrollY);
-    };
-
-    thumb.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        startDrag(e.clientY);
-    });
-    thumb.addEventListener('touchstart', (e) => {
-        startDrag(e.touches[0].clientY);
-    }, { passive: true });
-
-    /* --- Gerak drag: scrollTo + update thumb. TANPA layout read. --- */
-    const moveDrag = (clientY) => {
-        if (!dragging) {
-            return;
-        }
-        const deltaY = clientY - startY;
-        const progress = Math.min(1, Math.max(0, (startScrollY / geo.maxScroll) + (deltaY / geo.travel)));
-        const top = progress * geo.maxScroll;
-        window.scrollTo(0, top);            /* halaman ikut */
-        setThumbFromScrollY(top);           /* thumb langsung posisi (tanpa nunggu event scroll) */
-    };
-
-    window.addEventListener('mousemove', (e) => moveDrag(e.clientY));
-    window.addEventListener('touchmove', (e) => {
-        if (dragging) e.preventDefault();
-        moveDrag(e.touches[0].clientY);
+        nudge(e.deltaY * unit * WHEEL_STEP);
     }, { passive: false });
 
-    /* --- Drag selesai --- */
-    const endDrag = () => {
-        dragging = false;
-    };
-    window.addEventListener('mouseup', endDrag);
-    window.addEventListener('touchend', endDrag);
-    window.addEventListener('touchcancel', endDrag);
-
-    /* --- Tap/klik pada jalur (di luar thumb): lompat ke posisi itu --- */
-    wrap.addEventListener('mousedown', (e) => {
-        if (e.target === thumb || thumb.contains(e.target)) {
+    /* ---------- Keyboard ---------- */
+    window.addEventListener('keydown', function (e) {
+        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) {
             return;
         }
-        const offsetInTrack = e.clientY - wrap.getBoundingClientRect().top - geo.trackTop - geo.thumbH / 2;
-        const progress = Math.min(1, Math.max(0, offsetInTrack / geo.travel));
-        window.scrollTo({ top: progress * geo.maxScroll, behavior: 'smooth' });
+
+        var el = e.target;
+        var tag = el && el.tagName ? el.tagName.toLowerCase() : '';
+
+        // Jangan ambil alih saat mengetik, atau saat fokus di tombol/link
+        // (Spasi & Enter di sana punya arti sendiri).
+        if (tag === 'input' || tag === 'textarea' || tag === 'select'
+            || tag === 'button' || tag === 'a'
+            || (el && el.isContentEditable)) {
+            return;
+        }
+
+        refreshMax();
+        if (maxScroll <= 0) {
+            return;
+        }
+
+        var viewport = window.innerHeight;
+        var handled = true;
+
+        switch (e.key) {
+            case 'PageDown':
+                nudge(viewport * KEY_STEP);
+                break;
+            case 'PageUp':
+                nudge(-viewport * KEY_STEP);
+                break;
+            case ' ':
+                nudge(e.shiftKey ? -viewport * KEY_STEP : viewport * KEY_STEP);
+                break;
+            case 'Home':
+                target = 0;
+                start();
+                break;
+            case 'End':
+                target = maxScroll;
+                start();
+                break;
+            case 'ArrowDown':
+                nudge(110);
+                break;
+            case 'ArrowUp':
+                nudge(-110);
+                break;
+            default:
+                handled = false;
+        }
+
+        if (handled) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    /* ---------- Scroll dari sumber lain ----------
+       Scrollbar native (drag/klik), anchor #, Back/Forward, atau skrip
+       lain. Selama animasi kita berjalan, event yang berasal dari kita
+       sendiri diabaikan (scrollY == applied). */
+    window.addEventListener('scroll', function () {
+        var external = Math.abs(window.scrollY - applied) > 3;
+
+        if (!external) {
+            return;
+        }
+
+        stop();
+        resync();
+    }, { passive: true });
+
+    window.addEventListener('resize', function () {
+        refreshMax();
+        target = clamp(target);
+        current = clamp(current);
+        applied = window.scrollY;
     });
-    wrap.addEventListener('touchstart', (e) => {
-        if (e.target === thumb || thumb.contains(e.target)) {
-            return;
-        }
-        const offsetInTrack = e.touches[0].clientY - wrap.getBoundingClientRect().top - geo.trackTop - geo.thumbH / 2;
-        const progress = Math.min(1, Math.max(0, offsetInTrack / geo.travel));
-        window.scrollTo({ top: progress * geo.maxScroll, behavior: 'smooth' });
-    }, { passive: true });
 
-    /* Scroll lewat cara lain (wheel/keyboard/animasi halaman):
-       cukup update transform thumb — TANPA measureGeo (anti-thrash). */
-    window.addEventListener('scroll', () => {
-        if (!dragging) {
-            setThumbFromScrollY(window.scrollY);
-        }
-    }, { passive: true });
-
-    /* Geometri di-refresh hanya pada momen langka: */
-    window.addEventListener('resize', measureGeo);
-    window.addEventListener('load', measureGeo);
-    if (thumb.querySelector('img')) {
-        thumb.querySelector('img').addEventListener('load', measureGeo, { once: true });
-    }
-
-    /* Tinggi halaman BERUBAH saat gambar lazy-load / animasi reveal.
-       ResizeObserver memantau itu tanpa layout read di jalur scroll —
-       inilah kunci agar thumb tidak "tenggelam" di tengah halaman. */
+    /* Tinggi halaman berubah saat gambar lazy-load / animasi reveal. */
     if (typeof ResizeObserver !== 'undefined') {
-        const ro = new ResizeObserver(() => {
-            measureGeo();
-            setThumbFromScrollY(window.scrollY);
-        });
-        ro.observe(document.body);
-        ro.observe(doc);
+        new ResizeObserver(function () {
+            refreshMax();
+        }).observe(document.body);
     }
 
-    measureGeo();
-    setThumbFromScrollY(window.scrollY);
+    refreshMax();
+
+    window.addEventListener('pagehide', stop);
 })();

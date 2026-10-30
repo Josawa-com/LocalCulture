@@ -73,16 +73,40 @@
         scroll-behavior: smooth;
     }
 
-    /* ---------- SCROLLBAR KUSTOM: "gambar" menempel di thumb ----------
-       Browser tidak mengizinkan scrollbar diganti gambar bebas, JUGA
-       tidak bisa menaruh <img> di dalamnya. Trik yang mendekati:
-       1. Scrollbar asli disembunyikan total (width: 0) — yang terlihat
-          kini MURNI milik kita.
-       2. Elemen fixed #custom-scrollbar di tepi kanan menggantikannya:
-          track (garis tipis) + thumb berisi GAMBAR dari folder gambar
-          (public/gambar/scrollbar.png) yang bergerak mengikuti scroll,
-          persis perilaku thumb scrollbar asli.
-       JS kecil (resources/js/app.js) menggerakkan posisi thumb. ---------- */
+    /* ---------- SCROLLBAR NORMAL (bawaan browser) ----------
+       Tidak ada gambar, tidak ada elemen pengganti. Scrollbar asli
+       browser dipakai apa adanya, hanya diwarnai agar serasi dengan
+       palet aplikasi (cokelat brass di atas parchment). ---------- */
+
+    /* Firefox & Chrome 121+ — lebar bawaan (normal), hanya diwarnai */
+    html {
+        scrollbar-color: var(--color-bark-300) var(--color-parchment-dark);
+    }
+
+    /* Chrome / Edge / Safari (WebKit & Blink) */
+    html::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    html::-webkit-scrollbar-track {
+        background: var(--color-parchment-dark);
+    }
+    html::-webkit-scrollbar-thumb {
+        background-color: var(--color-bark-300);
+        border-radius: 999px;
+        /* Celah transparan agar thumb terlihat ramping */
+        border: 3px solid var(--color-parchment-dark);
+        background-clip: padding-box;
+    }
+    html::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-bark-400);
+    }
+    html::-webkit-scrollbar-thumb:active {
+        background-color: var(--color-bark-500);
+    }
+    html::-webkit-scrollbar-corner {
+        background: var(--color-parchment-dark);
+    }
 
     body {
         @apply bg-parchment text-bark-900 font-sans antialiased;
@@ -202,62 +226,5 @@
     }
 }
 
-/* ---------- Scrollbar kustom bergambar ---------- */
-/* Sembunyikan scrollbar asli (semua browser) */
-html {
-    scrollbar-width: none;           /* Firefox */
-    -ms-overflow-style: none;        /* IE/Edge lama */
-}
-html::-webkit-scrollbar {
-    width: 0;                        /* Chrome/Safari/Edge */
-    height: 0;
-}
+/* Scrollbar memakai bawaan browser — lihat @layer base di atas. */
 
-/* Pengganti: track tipis di tepi kanan + thumb bergambar
-   (gambar: public/gambar/Scrollbar.png — rasio 123x1536, sangat tinggi.
-   Tinggi thumb mengikuti rasio pada lebar jalur, dibatasi max 40vh agar
-   tetap ada ruang travel di layar pendek.) */
-#custom-scrollbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 18px;                     /* lebar jalur gambar (diperkecil) */
-    height: 100vh;
-    z-index: 9999;
-    /* TIDAK pointer-events:none — area ini interaktif:
-       bisa di-drag untuk scroll (mouse & sentuh) */
-}
-#custom-scrollbar .cs-track {
-    position: absolute;
-    top: 8px;
-    bottom: 8px;
-    right: 7px;                      /* posisi garis track */
-    width: 3px;
-    border-radius: 999px;
-    background: rgb(168 110 30 / .25); /* cokelat brass transparan */
-    pointer-events: none;
-}
-#custom-scrollbar .cs-thumb {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 18px;
-    height: 120px;                   /* tinggi thumb tetap — ringkas */
-    will-change: transform;
-    cursor: grab;                    /* isyarat bisa di-drag */
-}
-#custom-scrollbar .cs-thumb img {
-    width: 100%;
-    height: 100%;                    /* isi persis tinggi thumb */
-    object-fit: contain;             /* gambar utuh tanpa ter-crop */
-    object-position: center;
-    display: block;
-    user-select: none;
-    pointer-events: none;
-}
-
-/* Sembunyikan pengganti di perangkat sentuh KECUALI thumb tetap bisa
-   disentuh — jendela kecil ini tetap interaktif untuk drag-scroll */
-@media (pointer: coarse) {
-    #custom-scrollbar .cs-track { display: none; }
-}

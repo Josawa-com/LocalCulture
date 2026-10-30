@@ -29,4 +29,9 @@ class Regency extends Model
     {
         return $this->hasMany(Venue::class);
     }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(RegencyVisit::class);
+    }
 }

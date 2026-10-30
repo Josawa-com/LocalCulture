@@ -7,7 +7,9 @@ use App\Models\CultureCategory;
 use App\Models\Island;
 use App\Models\Province;
 use App\Models\Regency;
+use App\Models\RegencyVisit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -157,9 +159,94 @@ class CultureController extends Controller
 
         return view('culture.provinces', [
             'island' => $island->loadCount('regencies'),
-            'provinces' => $island->provinces()->withCount('regencies')->orderBy('name')->get(),
+            'provinces' => $this->provinceCards($island, $lockedProvinceId),
             'lockedProvinceId' => $lockedProvinceId,
         ]);
+    }
+
+    /**
+     * Kartu provinsi satu pulau.
+     *
+     * Nama & jumlah kabupaten/kota dibaca dari nama file gambar
+     * (config/province_maps.php), karena data di gambar adalah data resmi.
+     * Bila pulau belum punya config, dipakai data dari database.
+     *
+     * @return list<array{name: string, slug: ?string, url: ?string, image: ?string, image_alt: string, note: ?string, regencies: ?int, cities: ?int, locked: bool}>
+     */
+    private function provinceCards(Island $island, ?int $lockedProvinceId): array
+    {
+        $mapping = config('province_maps.'.$island->slug);
+        $dbProvinces = $island->provinces()->get()->keyBy('slug');
+
+        if (! is_array($mapping) || empty($mapping['provinces'])) {
+            // Fallback: tampilkan dari database apa adanya.
+            return $dbProvinces->map(function (Province $province) use ($lockedProvinceId): array {
+                return [
+                    'name' => $province->name,
+                    'slug' => $province->slug,
+                    'url' => route('culture.province', [$province->island, $province]),
+                    'image' => null,
+                    'image_alt' => $province->name,
+                    'note' => null,
+                    'regencies' => null,
+                    'cities' => null,
+                    'locked' => $lockedProvinceId !== null && (int) $lockedProvinceId !== $province->id,
+                ];
+            })->values()->all();
+        }
+
+        $folder = trim((string) ($mapping['folder'] ?? ''), '/');
+
+        // Encode tiap segmen folder agar aman (nama folder bisa berisi spasi).
+        $folderUrl = collect(explode('/', $folder))
+            ->map(fn (string $segment) => rawurlencode($segment))
+            ->implode('/');
+
+        return collect($mapping['provinces'])
+            ->map(function (array $row) use ($island, $dbProvinces, $folder, $folderUrl, $lockedProvinceId): array {
+                $file = basename((string) ($row['file'] ?? ''));
+                $path = public_path($folder.'/'.$file);
+                $exists = $file !== '' && is_file($path);
+
+                // Pola: ...<kabupaten>dan<kota>kota.png
+                [$regencies, $cities] = $this->parseCounts($file);
+
+                $slug = $row['slug'] ?? null;
+                $province = $slug ? $dbProvinces->get($slug) : null;
+
+                return [
+                    'name' => (string) ($row['name'] ?? pathinfo($file, PATHINFO_FILENAME)),
+                    'slug' => $slug,
+                    'url' => $province
+                        ? route('culture.province', [$island, $province])
+                        : null,
+                    'image' => $exists ? asset($folderUrl.'/'.rawurlencode($file)) : null,
+                    'image_alt' => (string) ($row['note'] ?? $row['name'] ?? ''),
+                    'note' => $row['note'] ?? null,
+                    'regencies' => $regencies,
+                    'cities' => $cities,
+                    'locked' => $province !== null
+                        && $lockedProvinceId !== null
+                        && (int) $lockedProvinceId !== $province->id,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Baca jumlah kabupaten & kota dari nama file gambar.
+     * Contoh: "MonasJakarta1dan5kota.png" -> [1, 5]
+     *
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function parseCounts(string $file): array
+    {
+        if (! preg_match('/(\d+)\s*dan\s*(\d+)\s*kota/i', $file, $matches)) {
+            return [null, null];
+        }
+
+        return [(int) $matches[1], (int) $matches[2]];
     }
 
     /** Guest memilih satu provinsi untuk diakses sebelum login. */
@@ -178,15 +265,61 @@ class CultureController extends Controller
     {
         $this->guardGuestAccess($request, $province);
 
+        $regencies = $province->regencies()
+            ->withCount('cultures')
+            ->orderBy('name')
+            ->get();
+
         return view('culture.regencies', [
             'province' => $province->load('island'),
-            'regencies' => $province->regencies()->withCount('cultures')->orderBy('name')->get(),
+            'regencies' => $regencies,
+            'mostVisitedId' => $this->mostVisitedRegencyId($regencies),
         ]);
+    }
+
+    /**
+     * ID wilayah yang paling sering dikunjungi di provinsi ini.
+     *
+     * Mengembalikan null bila:
+     *  - belum ada kunjungan sama sekali, atau
+     *  - ada lebih dari satu wilayah dengan jumlah kunjungan tertinggi
+     *    (seri) — karena tidak ada satu pun yang "paling banyak".
+     *
+     * @param  Collection<int, Regency>  $regencies
+     */
+    private function mostVisitedRegencyId($regencies): ?int
+    {
+        $totals = RegencyVisit::query()
+            ->whereIn('regency_id', $regencies->pluck('id'))
+            ->groupBy('regency_id')
+            ->selectRaw('regency_id, SUM(visits) as total')
+            ->pluck('total', 'regency_id');
+
+        if ($totals->isEmpty()) {
+            return null;
+        }
+
+        $max = (int) $totals->max();
+
+        if ($max <= 0) {
+            return null;
+        }
+
+        $leaders = $totals->filter(fn ($total) => (int) $total === $max);
+
+        // Seri di puncak -> tidak ada yang paling banyak.
+        return $leaders->count() === 1 ? (int) $leaders->keys()->first() : null;
     }
 
     public function regency(Request $request, Island $island, Province $province, Regency $regency): View
     {
         $this->guardGuestAccess($request, $province);
+
+        // Catat kunjungan (hanya untuk user login) — sumber data badge
+        // "Sering dikunjungi" di halaman pemilihan kabupaten/kota.
+        if ($user = $request->user()) {
+            RegencyVisit::record($user, $regency);
+        }
 
         $regency->load(['province.island', 'cultures.category']);
 
@@ -235,7 +368,12 @@ class CultureController extends Controller
         $locked = $request->session()->get('guest_province_id');
 
         if ($locked === null) {
-            abort(redirect()->route('culture.islands')->with('info', 'Pilih satu provinsi untuk mulai menjelajah, atau daftar untuk akses penuh.'));
+            // Tamu yang belum memilih provinsi: provinsi yang sedang dibuka
+            // otomatis dijadikan pilihannya. Tanpa notifikasi, tanpa memantul
+            // balik ke daftar pulau.
+            $request->session()->put('guest_province_id', $province->id);
+
+            return;
         }
 
         abort_unless((int) $locked === $province->id, 403, 'Buat akun gratis untuk mengakses materi provinsi lain!');

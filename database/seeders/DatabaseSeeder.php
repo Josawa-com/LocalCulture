@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
         // Wilayah: pulau → provinsi → kabupaten/kota
         $islands = collect([
             'Sumatera' => ['Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Sumatera Selatan'],
-            'Jawa' => ['DKI Jakarta', 'Jawa Barat', 'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur'],
+            'Jawa' => ['DKI Jakarta', 'Jawa Barat', 'Banten', 'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur'],
             'Kalimantan' => ['Kalimantan Barat', 'Kalimantan Timur', 'Kalimantan Selatan'],
             'Sulawesi' => ['Sulawesi Selatan', 'Sulawesi Utara', 'Sulawesi Tengah'],
             'Bali Nusa Tenggara' => ['Bali', 'NTB', 'NTT'],
@@ -53,7 +53,13 @@ class DatabaseSeeder extends Seeder
         })->flatten();
 
         $regencies = $islands->flatMap(function (Province $province) {
-            return collect(['Kota '.$province->name, 'Kab. '.$province->name])->map(
+            // DI Yogyakarta punya 5 kabupaten/kota yang sebenarnya, bukan
+            // pola "Kota/Kab. <nama provinsi>" seperti provinsi lain.
+            $names = $province->slug === 'di-yogyakarta'
+                ? ['Kulon Progo', 'Bantul', 'Sleman', 'Gunung Kidul', 'Kota Jogja']
+                : ['Kota '.$province->name, 'Kab. '.$province->name];
+
+            return collect($names)->map(
                 fn (string $r) => Regency::create(['province_id' => $province->id, 'name' => $r, 'slug' => str($r)->slug()])
             );
         });

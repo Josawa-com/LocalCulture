@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->hasMany(MysteryAttempt::class);
     }
 
+    public function regencyVisits(): HasMany
+    {
+        return $this->hasMany(RegencyVisit::class);
+    }
+
     public function interestRequests(): HasMany
     {
         return $this->hasMany(InterestRequest::class);

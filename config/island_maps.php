@@ -87,7 +87,7 @@ return [
             'file' => 'KepulauanMaluku2.png',
             'label' => 'Maluku',
             'island' => 'maluku-papua',
-            'x' => 80, 'y' => 57, 'w' => 35, 'z' => 1, 'r' => 0,
+            'x' => 82, 'y' => 57, 'w' => 35, 'z' => 1, 'r' => 0,
         ],
 
         // ---------- PAPUA (paling timur) ----------

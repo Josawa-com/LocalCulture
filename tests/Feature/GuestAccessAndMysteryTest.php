@@ -14,22 +14,22 @@ class GuestAccessAndMysteryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_must_choose_one_province_before_accessing_material(): void
+    public function test_guest_auto_gets_the_first_province_they_open_without_a_notice(): void
     {
         $island = Island::factory()->create();
         $province = Province::factory()->for($island)->create();
         Regency::factory()->for($province)->create();
 
-        // Tanpa memilih provinsi → redirect ke halaman pilihan
+        // Tamu membuka provinsi tanpa memilih lebih dulu: provinsi itu
+        // otomatis menjadi pilihannya, tanpa notifikasi apa pun.
         $this->get(route('culture.province', [$island, $province]))
-            ->assertRedirect(route('culture.islands'))
-            ->assertSessionHas('info');
+            ->assertOk()
+            ->assertSessionHas('guest_province_id', $province->id)
+            ->assertSessionMissing('info');
 
-        // Pilih provinsi → bisa akses
-        $this->post(route('culture.choose-province'), ['province_id' => $province->id])
-            ->assertRedirect();
-
-        $this->get(route('culture.province', [$island, $province]))->assertOk();
+        // Tetap bisa lanjut ke wilayah di provinsi yang sama.
+        $regency = $province->regencies()->first();
+        $this->get(route('culture.regency', [$island, $province, $regency]))->assertOk();
     }
 
     public function test_guest_cannot_access_province_other_than_chosen(): void
