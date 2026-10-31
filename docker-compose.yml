@@ -24,6 +24,12 @@ services:
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/data/database.sqlite
       - DB_MIGRATE=true
+      # Membuat/memperbarui akun admin setiap kali kontainer menyala.
+      # Kredensial diambil dari .env (ADMIN_EMAIL / ADMIN_PASSWORD).
+      - ADMIN_SEED=${ADMIN_SEED:-true}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-anonimexe676767@gmail.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ADMIN_NAME=${ADMIN_NAME:-Admin CultureRaya}
       - SESSION_DRIVER=database
       - CACHE_STORE=database
       - QUEUE_CONNECTION=database

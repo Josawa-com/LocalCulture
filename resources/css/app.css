@@ -322,30 +322,11 @@
         color: var(--color-brass-700);
     }
 
-    /* Desktop: pil selebar isinya, tiap menu punya ruang lega. */
+    /* Di desktop menu ada di header atas, jadi dock disembunyikan.
+       Di mobile (≤767px) dock tetap tampil seperti sekarang. */
     @media (min-width: 768px) {
         .nav-dock {
-            width: max-content;
-            max-width: calc(100vw - 3rem);
-        }
-        .nav-dock__list {
-            gap: 0.35rem;
-            padding: 0.7rem;
-        }
-        .nav-dock__item {
-            flex: 0 0 auto;
-        }
-        .nav-dock__link {
-            flex: 0 0 auto;
-            flex-direction: row;
-            gap: 0.65rem;
-            padding: 1rem 1.25rem;
-            font-size: 1rem;
-            letter-spacing: 0.005em;
-        }
-        .nav-dock__icon svg {
-            width: 24px;
-            height: 24px;
+            display: none;
         }
     }
 

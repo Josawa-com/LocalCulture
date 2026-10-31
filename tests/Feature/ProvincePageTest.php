@@ -63,7 +63,7 @@ class ProvincePageTest extends TestCase
             ->assertSee('4 kabupaten')
             // CandiBudhdaJawaTengah29dan6kota.png
             ->assertSee('29 kabupaten')
-            // KeratonJogja4dan1kota.png
+            // TuguJogja4dan1kota.png
             ->assertSee('1 kota')
             // PatungSuraBuayaJawaTimur29dan9kota.png
             ->assertSee('29 kabupaten');

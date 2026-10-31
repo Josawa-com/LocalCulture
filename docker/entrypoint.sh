@@ -77,6 +77,16 @@ if [ "${DB_MIGRATE:-true}" = "true" ]; then
 fi
 
 # ------------------------------------------------------------
+# Akun admin (default: jalan; matikan dengan ADMIN_SEED=false)
+# Idempoten — aman dijalankan setiap kali kontainer menyala.
+# Kredensial: ADMIN_EMAIL / ADMIN_PASSWORD (lihat config/admin.php).
+# ------------------------------------------------------------
+if [ "${ADMIN_SEED:-true}" = "true" ]; then
+    echo "Memastikan akun admin tersedia..."
+    php artisan db:seed --class=AdminUserSeeder --force --no-interaction
+fi
+
+# ------------------------------------------------------------
 # Optimisasi produksi (matikan dengan APP_OPTIMIZE=false)
 # ------------------------------------------------------------
 if [ "${APP_OPTIMIZE:-true}" = "true" ] && [ "${APP_ENV:-production}" = "production" ]; then

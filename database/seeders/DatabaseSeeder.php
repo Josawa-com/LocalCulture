@@ -13,25 +13,16 @@ use App\Models\Regency;
 use App\Models\Show;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin — hanya satu akun. Kredensial bisa diubah lewat .env
-        // (ADMIN_EMAIL / ADMIN_PASSWORD), lihat config/admin.php.
+        // Admin — hanya satu akun. Kredensial dari config/admin.php (.env).
+        $this->call(AdminUserSeeder::class);
+
         $adminEmail = config('admin.email');
         $adminPassword = config('admin.password');
-
-        $admin = User::updateOrCreate(
-            ['email' => $adminEmail],
-            [
-                'name' => config('admin.name'),
-                'password' => Hash::make($adminPassword),
-                'role' => 'admin',
-            ]
-        );
 
         $users = User::factory(24)->create();
 
@@ -192,7 +183,8 @@ class DatabaseSeeder extends Seeder
             'mysteries_solved' => fake()->numberBetween(0, 5),
             'streak' => fake()->numberBetween(0, 5),
         ]));
-        $admin->reputation()->create(['total_score' => 0]);
+        $admin = User::where('email', $adminEmail)->first();
+        $admin?->reputation()->create(['total_score' => 0]);
 
         // Materi budaya lengkap Kabupaten Kulon Progo.
         $this->call(KulonProgoCultureSeeder::class);

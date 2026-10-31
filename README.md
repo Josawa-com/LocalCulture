@@ -1,58 +1,187 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CultureRaya — Jelajah Budaya Nusantara
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web untuk menjelajahi, mempelajari, dan melestarikan budaya Indonesia.
+Berisi materi budaya per pulau → provinsi → kabupaten/kota, kuis, minigame
+Mystery, papan peringkat, direktori sanggar, dan panel admin.
 
-## About Laravel
+Dibangun dengan **Laravel 13**, **Tailwind CSS 4**, **SQLite**, dan **Docker**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Akun Admin
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Hanya ada **satu** akun admin:
 
-## Learning Laravel
+| | |
+|---|---|
+| **Email** | `anonimexe676767@gmail.com` |
+| **Password** | `admin123` |
+| **Panel admin** | `http://localhost:8000/rezka` |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Cara masuk:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Buka `/login`, masukkan email & password di atas.
+2. Setelah masuk, buka `/rezka` (harus diketik langsung di address bar).
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Akun ini dibuat otomatis dari `config/admin.php`. Nilainya bisa diubah lewat
+`.env`:
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```dotenv
+ADMIN_NAME="Admin CultureRaya"
+ADMIN_EMAIL=anonimexe676767@gmail.com
+ADMIN_PASSWORD=admin123
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Setelah mengubah `.env`, buat ulang akunnya:
 
-## Contributing
+```bash
+php artisan db:seed --class=AdminUserSeeder --force
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Di Docker, akun admin **dibuat ulang otomatis setiap kontainer menyala**
+(lihat `docker/entrypoint.sh`). Matikan dengan `ADMIN_SEED=false`.
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Menjalankan
 
-## Security Vulnerabilities
+### Docker (paling mudah)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+cp .env.example .env      # opsional, untuk mengubah port / akun admin
+docker compose up -d --build
+```
 
-## License
+Buka **http://localhost:8000**.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Database SQLite disimpan di volume `cultureraya-database`, jadi data tetap ada
+walau kontainer dihapus. Untuk mengisi data contoh lengkap (materi budaya,
+kuis, mystery, sanggar):
+
+```bash
+docker compose exec app php artisan db:seed --force
+```
+
+### Lokal
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
+
+Atau langsung:
+
+```bash
+./dev.sh          # lokal + Vite
+./dev.sh --lan    # bisa dibuka dari HP di jaringan yang sama
+./share.sh        # satu port, aset sudah di-build
+./docker.sh       # --seed | --logs | --stop | --reset
+```
+
+---
+
+## Halaman
+
+| Path | Isi |
+|---|---|
+| `/` | Beranda |
+| `/budaya` | Peta pulau & materi budaya |
+| `/budaya/{pulau}` | Daftar provinsi di pulau tersebut |
+| `/budaya/{pulau}/{provinsi}` | Daftar kabupaten/kota |
+| `/budaya/{pulau}/{provinsi}/{kab}` | Materi budaya per wilayah |
+| `/kuis` | Kuis harian, mingguan, bulanan, pengetahuan |
+| `/misteri` | Minigame Mystery Budaya |
+| `/sanggar` | Direktori 74 sanggar seni DIY + tautan Google Maps |
+| `/pertunjukan` | Jadwal pertunjukan |
+| `/leaderboard` | Papan peringkat kuis & Mystery |
+| `/profil` | Profil, riwayat kuis, pengaturan |
+| `/rezka` | Panel admin |
+
+---
+
+## Navigasi
+
+Menu utama berada di **dock melayang di bawah layar** bergaya *Liquid Glass*:
+kaca transparan dengan `backdrop-filter`, tanpa animasi, dan membagi ruang
+secara merata. Header atas hanya berisi logo dan tombol akun.
+
+Dock: `Budaya` · `Kuis` · `Mystery` · `Pertunjukan` · `Sanggar` · `Peringkat`.
+
+---
+
+## Data Budaya
+
+Materi budaya DIY lengkap — **173 materi**:
+
+| Wilayah | Materi |
+|---|---|
+| Kulon Progo | 39 |
+| Kota Yogyakarta | 37 |
+| Gunungkidul | 36 |
+| Bantul | 34 |
+| Sleman | 27 |
+
+Seeder terpisah per wilayah, semuanya idempoten:
+
+```bash
+php artisan db:seed --class=KulonProgoCultureSeeder --force
+php artisan db:seed --class=BantulCultureSeeder --force
+php artisan db:seed --class=SlemanCultureSeeder --force
+php artisan db:seed --class=GunungKidulCultureSeeder --force
+php artisan db:seed --class=KotaJogjaCultureSeeder --force
+```
+
+### Sanggar
+
+74 sanggar & tempat latihan seni di lima kabupaten/kota DIY
+(`VenueSanggarSeeder`). Setiap kartu membuka Google Maps dengan pencarian
+nama sanggar + wilayah + "Daerah Istimewa Yogyakarta".
+
+Dua lokasi sudah punya koordinat terverifikasi: **Sanggar Seni Kinanti Sekar**
+dan **Siswa Among Beksa**.
+
+---
+
+## Mengatur Tata Letak Peta Pulau
+
+Semua posisi gambar peta diatur di satu file: **`config/island_maps.php`**.
+
+```php
+[
+    'file'   => 'PulauSumatra10.png', // file di public/Pulau/
+    'label'  => 'Sumatera',
+    'island' => 'sumatera',           // slug tujuan saat diklik
+    'x' => 0, 'y' => 40,              // titik tengah, persen kotak
+    'w' => 28,                        // lebar, persen kotak
+    'z' => 3,                         // urutan tumpuk
+    'r' => -5,                        // rotasi, derajat
+],
+```
+
+`aspect` di atas daftar gambar mengatur rasio kotak (lebar : tinggi).
+Jumlah provinsi dibaca otomatis dari angka terakhir nama file
+(`PulauJawa6.png` → 6 provinsi). Di HP posisi tidak berubah — hanya seluruh
+kotak diperkecil seragam agar muat.
+
+---
+
+## Perintah Berguna
+
+```bash
+php artisan test --compact        # jalankan tes
+vendor/bin/pint --dirty           # rapikan format kode
+php artisan route:list            # daftar rute
+php artisan migrate:fresh --seed  # reset database + data contoh
+```
+
+---
+
+## Lisensi
+
+MIT.

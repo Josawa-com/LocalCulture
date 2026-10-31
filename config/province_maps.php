@@ -54,7 +54,7 @@ return [
                 'note' => 'Candi Borobudur',
             ],
             [
-                'file' => 'KeratonJogja4dan1kota.png',
+                'file' => 'TuguJogja4dan1kota.png',
                 'name' => 'DI Yogyakarta',
                 'slug' => 'di-yogyakarta',
                 'note' => 'Keraton Yogyakarta',

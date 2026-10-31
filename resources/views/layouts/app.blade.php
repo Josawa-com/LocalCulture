@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="{{ asset('gambar/CultureRayaLogo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-screen flex-col bg-parchment pb-28 text-bark-900 antialiased font-sans md:pb-32">
+<body class="flex min-h-screen flex-col bg-parchment pb-28 text-bark-900 antialiased font-sans md:pb-0">
     {{-- Skip link untuk aksesibilitas --}}
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md bg-brass-600 px-3 py-2 text-xs font-semibold text-bark-950 shadow-raised">
         Lompati ke konten utama
@@ -27,6 +27,7 @@
         ];
     @endphp
 
+    {{-- Header: logo & akun seperti biasa; menu desktop dibungkus satu kotak. --}}
     <header class="sticky top-0 z-40 border-b border-bark-200 bg-parchment/90 backdrop-blur">
         <nav class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4">
             {{-- Brand: logo utuh + nama --}}
@@ -37,6 +38,21 @@
                     <span class="kicker">Jelajahi Budaya Indonesia</span>
                 </div>
             </a>
+
+            {{-- Menu desktop: tanpa kotak latar, menyatu dengan header --}}
+            <div class="hidden md:block">
+                <ul class="flex items-center gap-0.5">
+                    @foreach($navItems as $item)
+                        <li>
+                            <a href="{{ route($item['route']) }}" @if(request()->routeIs($item['active'])) aria-current="page" @endif
+                               class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors {{ request()->routeIs($item['active']) ? 'bg-bark-900 font-semibold text-white shadow-sm' : 'font-medium text-bark-700 hover:bg-bark-100 hover:text-bark-950' }}">
+                                <x-icon :name="$item['icon']" :size="15" />
+                                {{ $item['short'] }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
 
             {{-- User menu: avatar & nama langsung membuka halaman profil --}}
             <div class="flex items-center gap-2">

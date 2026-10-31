@@ -84,8 +84,9 @@ class NavigationDockTest extends TestCase
     {
         $html = $this->get('/')->assertOk()->getContent();
 
+        // Ruang bawah hanya di mobile (dock di bawah layar).
         $this->assertStringContainsString('pb-28', $html);
-        $this->assertStringContainsString('md:pb-32', $html);
+        $this->assertStringContainsString('md:pb-0', $html);
     }
 
     public function test_dock_is_reachable_by_keyboard_and_screen_readers(): void
