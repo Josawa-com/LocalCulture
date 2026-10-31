@@ -175,6 +175,59 @@
             </div>
         @endauth
 
+        {{-- ============================================================
+             PAPAN PERINGKAT MYSTERY BUDAYA
+             ============================================================ --}}
+        <section class="mt-12" aria-labelledby="peringkat-mystery">
+            <div class="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <span class="kicker">Minigame</span>
+                    <h2 id="peringkat-mystery" class="display-lg text-xl text-bark-950">Peringkat Mystery Budaya</h2>
+                    <p class="mt-1 text-xs text-bark-600">
+                        Skor tertinggi per pemain dari misteri yang berhasil dipecahkan.
+                    </p>
+                </div>
+                <a href="{{ route('mystery.index') }}" class="text-xs font-semibold text-brass-700 hover:underline">
+                    Main Mystery →
+                </a>
+            </div>
+
+            @if($mysteryLeaders->isEmpty())
+                <div class="panel mt-4 px-6 py-10 text-center">
+                    <x-icon name="sparkles" size="28" class="mx-auto text-bark-300"/>
+                    <p class="mt-3 text-sm text-bark-600">Belum ada yang memecahkan misteri.</p>
+                    <a href="{{ route('mystery.index') }}" class="btn-primary btn-sm mt-4">Jadi yang Pertama</a>
+                </div>
+            @else
+                <div class="panel mt-4 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="border-b border-bark-200 bg-bark-50 text-xs uppercase tracking-wide text-bark-600">
+                            <tr>
+                                <th scope="col" class="w-16 px-4 py-3 text-center">#</th>
+                                <th scope="col" class="px-4 py-3">Pemain</th>
+                                <th scope="col" class="px-4 py-3 text-center">Terpecahkan</th>
+                                <th scope="col" class="px-4 py-3 text-right">Skor Terbaik</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-bark-100">
+                            @foreach($mysteryLeaders as $entry)
+                                @php $isMe = auth()->check() && auth()->id() === $entry['user_id']; @endphp
+                                <tr class="{{ $isMe ? 'bg-brass-50' : 'hover:bg-bark-50' }}">
+                                    <td class="px-4 py-3 text-center font-bold tabular-nums text-bark-700">{{ $entry['rank'] }}</td>
+                                    <td class="px-4 py-3 font-semibold text-bark-900">
+                                        {{ $entry['name'] }}
+                                        @if($isMe) <span class="tag ml-1 bg-brass-100 text-brass-800">Kamu</span> @endif
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-bark-700">{{ $entry['solved'] }}</td>
+                                    <td class="px-4 py-3 text-right font-bold tabular-nums text-bark-950">{{ $entry['score'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </section>
+
         <p class="mt-6 text-center text-xs text-bark-500">
             Peringkat diperbarui otomatis setiap kali sebuah kuis diselesaikan.
         </p>

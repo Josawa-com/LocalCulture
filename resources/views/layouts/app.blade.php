@@ -9,11 +9,23 @@
     <link rel="apple-touch-icon" href="{{ asset('gambar/CultureRayaLogo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-screen flex-col bg-parchment text-bark-900 antialiased font-sans">
+<body class="flex min-h-screen flex-col bg-parchment pb-28 text-bark-900 antialiased font-sans md:pb-32">
     {{-- Skip link untuk aksesibilitas --}}
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md bg-brass-600 px-3 py-2 text-xs font-semibold text-bark-950 shadow-raised">
         Lompati ke konten utama
     </a>
+
+    @php
+        // Menu utama dipakai oleh dock navigasi di bawah layar.
+        $navItems = [
+            ['label' => 'Materi Budaya', 'short' => 'Budaya', 'route' => 'culture.islands', 'active' => 'culture.*', 'icon' => 'book-open'],
+            ['label' => 'Kuis', 'short' => 'Kuis', 'route' => 'quests.index', 'active' => 'quests.*', 'icon' => 'graduation'],
+            ['label' => 'Mystery', 'short' => 'Mystery', 'route' => 'mystery.index', 'active' => 'mystery.*', 'icon' => 'sparkles'],
+            ['label' => 'Pertunjukan', 'short' => 'Pertunjukan', 'route' => 'shows.index', 'active' => 'shows.*', 'icon' => 'ticket'],
+            ['label' => 'Sanggar', 'short' => 'Sanggar', 'route' => 'venues.index', 'active' => 'venues.*', 'icon' => 'users'],
+            ['label' => 'Peringkat', 'short' => 'Peringkat', 'route' => 'leaderboard', 'active' => 'leaderboard', 'icon' => 'trophy'],
+        ];
+    @endphp
 
     <header class="sticky top-0 z-40 border-b border-bark-200 bg-parchment/90 backdrop-blur">
         <nav class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4">
@@ -25,31 +37,6 @@
                     <span class="kicker">Jelajahi Budaya Indonesia</span>
                 </div>
             </a>
-
-            {{-- Desktop nav --}}
-            @php
-                $navItems = [
-                    ['label' => 'Materi Budaya', 'short' => 'Budaya', 'route' => 'culture.islands', 'active' => 'culture.*'],
-                    ['label' => 'Kuis', 'short' => 'Kuis', 'route' => 'quests.index', 'active' => 'quests.*'],
-                    ['label' => 'Mystery', 'short' => 'Mystery', 'route' => 'mystery.index', 'active' => 'mystery.*'],
-                    ['label' => 'Pertunjukan', 'short' => 'Pertunjukan', 'route' => 'shows.index', 'active' => 'shows.*'],
-                    ['label' => 'Sanggar', 'short' => 'Sanggar', 'route' => 'venues.index', 'active' => 'venues.*'],
-                    ['label' => 'Peringkat', 'short' => 'Peringkat', 'route' => 'leaderboard', 'active' => 'leaderboard'],
-                ];
-            @endphp
-            <ul class="hidden items-center gap-1 md:flex">
-                @foreach($navItems as $item)
-                    <li>
-                        <a href="{{ route($item['route']) }}" @if(request()->routeIs($item['active'])) aria-current="page" @endif
-                           class="relative rounded-md px-3 py-2 text-sm transition {{ request()->routeIs($item['active']) ? 'font-semibold text-bark-950' : 'font-medium text-bark-700 hover:bg-bark-100 hover:text-bark-900' }}">
-                            {{ $item['label'] }}
-                            @if(request()->routeIs($item['active']))
-                                <span class="absolute inset-x-3 bottom-0.5 h-0.5 rounded-full bg-brass-500" aria-hidden="true"></span>
-                            @endif
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
 
             {{-- User menu: avatar & nama langsung membuka halaman profil --}}
             <div class="flex items-center gap-2">
@@ -69,19 +56,6 @@
                 @endauth
             </div>
         </nav>
-
-        {{-- Mobile nav --}}
-        <div class="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 pb-3 text-sm md:hidden">
-            @foreach($navItems as $item)
-                <a href="{{ route($item['route']) }}" @if(request()->routeIs($item['active'])) aria-current="page" @endif
-                   class="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 {{ request()->routeIs($item['active']) ? 'bg-bark-900 font-semibold text-white' : 'text-bark-700 hover:bg-bark-100' }}">
-                    {{ $item['short'] }}
-                    @if(request()->routeIs($item['active']))
-                        <span class="h-1.5 w-1.5 rounded-full bg-brass-400" aria-hidden="true"></span>
-                    @endif
-                </a>
-            @endforeach
-        </div>
     </header>
 
     {{-- Main --}}
@@ -123,5 +97,30 @@
             <p class="mt-6 text-xs text-bark-500">&copy; {{ date('Y') }} CultureRaya · Dibuat untuk lomba sosial budaya</p>
         </div>
     </footer>
+
+    {{-- Dock navigasi bawah bergaya Liquid Glass: melayang, membulat
+         memanjang, dan tembus pandang seperti kaca cair. --}}
+    <nav class="nav-dock" aria-label="Navigasi utama">
+        <div class="nav-dock__glass" aria-hidden="true">
+            <span class="nav-dock__blob nav-dock__blob--a"></span>
+            <span class="nav-dock__blob nav-dock__blob--b"></span>
+            <span class="nav-dock__sheen"></span>
+        </div>
+        <ul class="nav-dock__list">
+            @foreach($navItems as $item)
+                <li class="nav-dock__item">
+                    <a href="{{ route($item['route']) }}"
+                       @if(request()->routeIs($item['active'])) aria-current="page" @endif
+                       class="nav-dock__link {{ request()->routeIs($item['active']) ? 'is-active' : '' }}"
+                       title="{{ $item['label'] }}">
+                        <span class="nav-dock__icon">
+                            <x-icon :name="$item['icon']" :size="20" />
+                        </span>
+                        <span>{{ $item['short'] }}</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    </nav>
 </body>
 </html>

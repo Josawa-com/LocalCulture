@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -59,7 +60,45 @@ class LeaderboardController extends Controller
                 'quests' => array_sum(array_column($leaderboard, 'quests')),
                 'score' => array_sum(array_column($leaderboard, 'score')),
             ],
+            // Papan peringkat Mystery Budaya (minigame).
+            'mysteryLeaders' => $this->mysteryLeaderboard(),
         ]);
+    }
+
+    /**
+     * Peringkat Mystery Budaya: skor tertinggi per pemain dari misteri
+     * yang berhasil dipecahkan.
+     *
+     * @return Collection<int, array{rank: int, user_id: int, name: string, score: int, solved: int}>
+     */
+    private function mysteryLeaderboard()
+    {
+        $rows = DB::table('mystery_attempts')
+            ->join('users', 'users.id', '=', 'mystery_attempts.user_id')
+            ->where('mystery_attempts.status', 1)
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('best_score')
+            ->orderBy('users.name')
+            ->limit(10)
+            ->selectRaw('users.id as user_id, users.name, MAX(mystery_attempts.score) as best_score, COUNT(*) as solved')
+            ->get();
+
+        $rank = 0;
+        $prev = null;
+
+        return $rows->map(function ($row) use (&$rank, &$prev) {
+            $score = (int) $row->best_score;
+            $rank = ($prev !== null && $score === $prev) ? $rank : $rank + 1;
+            $prev = $score;
+
+            return [
+                'rank' => $rank,
+                'user_id' => (int) $row->user_id,
+                'name' => $row->name,
+                'score' => $score,
+                'solved' => (int) $row->solved,
+            ];
+        });
     }
 
     /**

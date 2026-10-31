@@ -87,6 +87,8 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])
         Route::post('/soal/{question}', [Admin\QuestionAdminController::class, 'update'])->name('questions.update');
         Route::delete('/soal/{question}', [Admin\QuestionAdminController::class, 'destroy'])->name('questions.destroy');
 
+        Route::resource('mysteries', Admin\MysteryAdminController::class)->except('show');
+
         Route::resource('shows', Admin\ShowAdminController::class)->except('show')->parameters(['shows' => 'show']);
         Route::resource('venues', Admin\VenueAdminController::class)->except('show');
 

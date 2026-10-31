@@ -23,6 +23,7 @@
                 $adminNavItems = [
                     ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'active' => 'admin.dashboard'],
                     ['label' => 'Kuis', 'route' => 'admin.quests.index', 'active' => 'admin.quests.*'],
+                    ['label' => 'Mystery', 'route' => 'admin.mysteries.index', 'active' => 'admin.mysteries.*'],
                     ['label' => 'Pertunjukan', 'route' => 'admin.shows.index', 'active' => 'admin.shows.*'],
                     ['label' => 'Sanggar', 'route' => 'admin.venues.index', 'active' => 'admin.venues.*'],
                     ['label' => 'Permintaan', 'route' => 'admin.requests.index', 'active' => 'admin.requests.*'],

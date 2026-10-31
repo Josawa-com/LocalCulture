@@ -57,33 +57,46 @@ class GuestAccessAndMysteryTest extends TestCase
         $this->actingAs($user)->get(route('culture.province', [$island, $provinceB]))->assertOk();
     }
 
-    public function test_mystery_guess_correct_answer_scores_by_clues_used(): void
+    public function test_mystery_guess_correct_answer_scores_full_points(): void
     {
         $user = User::factory()->create();
         $user->reputation()->create();
-        $mystery = Mystery::factory()->create(['answer' => 'Rumah Gadang', 'origin' => 'Sumatera Barat']);
-
-        // Jawab dengan 1 petunjuk → 500 poin
-        $response = $this->actingAs($user)->postJson(route('mystery.guess', $mystery), [
-            'guess' => 'rumah gadang',
-            'clues_used' => 1,
+        $mystery = Mystery::factory()->create([
+            'answer' => 'Rumah Gadang',
+            'origin' => 'Sumatera Barat',
+            'points' => 300,
+            'clue_penalty' => 50,
         ]);
 
-        $response->assertOk()->assertJson(['is_correct' => true, 'score' => 500]);
-        $this->assertEquals(500, $user->reputation()->first()->total_score);
+        // Tanpa membuka petunjuk -> poin penuh 300
+        $response = $this->actingAs($user)->postJson(route('mystery.guess', $mystery), [
+            'guess' => 'rumah gadang',
+        ]);
+
+        $response->assertOk()->assertJson(['is_correct' => true, 'score' => 300]);
+        $this->assertEquals(300, $user->reputation()->first()->total_score);
         $this->assertEquals(1, $user->reputation()->first()->mysteries_solved);
     }
 
-    public function test_mystery_score_decreases_with_more_clues(): void
+    public function test_mystery_score_decreases_by_50_per_clue(): void
     {
         $user = User::factory()->create();
         $user->reputation()->create();
-        $mystery = Mystery::factory()->create(['answer' => 'Angklung', 'origin' => 'Jawa Barat']);
+        $mystery = Mystery::factory()->create([
+            'answer' => 'Angklung',
+            'origin' => 'Jawa Barat',
+            'points' => 300,
+            'clue_penalty' => 50,
+        ]);
+
+        // Buka 3 petunjuk -> 300 - (3 x 50) = 150
+        for ($i = 0; $i < 3; $i++) {
+            $this->actingAs($user)->postJson(route('mystery.reveal', $mystery))->assertOk();
+        }
 
         $this->actingAs($user)->postJson(route('mystery.guess', $mystery), [
             'guess' => 'angklung',
-            'clues_used' => 3,
-        ])->assertJson(['score' => 300]);
+        ])->assertJson(['score' => 150]);
     }
 
     public function test_wrong_mystery_guess_records_attempt_without_score(): void
@@ -94,7 +107,6 @@ class GuestAccessAndMysteryTest extends TestCase
 
         $this->actingAs($user)->postJson(route('mystery.guess', $mystery), [
             'guess' => 'Tari Saman',
-            'clues_used' => 2,
         ])->assertJson(['is_correct' => false, 'score' => 0]);
 
         $this->assertEquals(0, $user->reputation()->first()->total_score);
@@ -109,8 +121,16 @@ class GuestAccessAndMysteryTest extends TestCase
             'max_clues' => 3,
         ]);
 
-        $this->actingAs($user)->postJson(route('mystery.reveal', $mystery), ['clue' => 1])
+        // Clue dibuka BERTAHAP (server yang menentukan urutan),
+        // jadi permintaan pertama selalu mengembalikan clue pertama.
+        $this->actingAs($user)->postJson(route('mystery.reveal', $mystery))
             ->assertOk()
-            ->assertJsonPath('clue', 'Petunjuk kedua');
+            ->assertJsonPath('clue', 'Petunjuk pertama')
+            ->assertJsonPath('clues_revealed', 1);
+
+        $this->actingAs($user)->postJson(route('mystery.reveal', $mystery))
+            ->assertOk()
+            ->assertJsonPath('clue', 'Petunjuk kedua')
+            ->assertJsonPath('clues_revealed', 2);
     }
 }

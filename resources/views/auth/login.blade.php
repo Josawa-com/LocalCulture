@@ -36,9 +36,5 @@
 
             <button type="submit" class="btn-primary w-full">Masuk</button>
         </form>
-
-        <p class="mt-4 text-center text-xs text-bark-500">
-            Admin? Masuk lalu buka <span class="font-semibold text-bark-700">/rezka</span>
-        </p>
     </div>
 @endsection

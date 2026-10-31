@@ -10,7 +10,11 @@ ROLE="${CONTAINER_ROLE:-app}"
 # ------------------------------------------------------------
 
 # Database SQLite dibuat bila belum ada (dipakai secara default).
-if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ] && [ ! -f "${DB_DATABASE:-database/database.sqlite}" ]; then
+# Folder data persisten (di-mount sebagai volume).
+mkdir -p /var/www/data
+chown www-data:www-data /var/www/data
+
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ] && [ ! -f "${DB_DATABASE:-/var/www/data/database.sqlite}" ]; then
     echo "Membuat database SQLite di ${DB_DATABASE:-database/database.sqlite}..."
     mkdir -p "$(dirname "${DB_DATABASE:-database/database.sqlite}")"
     touch "${DB_DATABASE:-database/database.sqlite}"

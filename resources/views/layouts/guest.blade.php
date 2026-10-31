@@ -25,8 +25,12 @@
         </div>
     </main>
 
-    <footer class="py-6 text-center text-xs text-bark-500">
-        <a href="{{ route('home') }}" class="hover:text-brass-700 hover:underline">← Kembali ke beranda</a>
+    <footer class="px-4 py-8 text-center">
+        <a href="{{ route('home') }}"
+           class="btn-secondary w-full max-w-md justify-center gap-2 px-6 py-3 text-sm sm:w-auto">
+            <span aria-hidden="true">←</span>
+            Kembali ke Beranda
+        </a>
     </footer>
 </body>
 </html>

@@ -12,7 +12,6 @@ use App\Models\Question;
 use App\Models\Regency;
 use App\Models\Show;
 use App\Models\User;
-use App\Models\Venue;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,13 +19,19 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin & demo user
-        $admin = User::create([
-            'name' => 'Admin CultureRaya',
-            'email' => 'admin@localculture.test',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
+        // Admin — hanya satu akun. Kredensial bisa diubah lewat .env
+        // (ADMIN_EMAIL / ADMIN_PASSWORD), lihat config/admin.php.
+        $adminEmail = config('admin.email');
+        $adminPassword = config('admin.password');
+
+        $admin = User::updateOrCreate(
+            ['email' => $adminEmail],
+            [
+                'name' => config('admin.name'),
+                'password' => Hash::make($adminPassword),
+                'role' => 'admin',
+            ]
+        );
 
         $users = User::factory(24)->create();
 
@@ -127,15 +132,43 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Mystery Budaya
+        // Mystery Budaya (minigame): pernyataan + 3 petunjuk
         collect([
-            ['Rumah Gadang', 'Sumatera Barat', ['Atapnya melengkung runcing seperti tanduk kerbau.', 'Terdiri atas bilangan ganjil ruangan.', 'Fungsi utamanya sebagai rumah adat suku Minangkabau.']],
-            ['Tari Kecak', 'Bali', ['Tarian tanpa alat musik, diiringi bunyi "cak-cak-cak".', 'Ditarik oleh puluhan pria duduk melingkar.', 'Menceritakan kisah Ramayana.']],
-            ['Angklung', 'Jawa Barat', ['Alat musik dari bambu yang digoyang.', 'Setiap alat menghasilkan satu nada.', 'Diakui UNESCO sebagai warisan budaya takbenda.']],
-            ['Rumah Honai', 'Papua', ['Rumah mungil beratap jerami berbentuk kubah.', 'Dibangun tanpa paku.', 'Rumah adat suku Dani.']],
-            ['Tari Saman', 'Aceh', ['Ditarik oleh delapan orang atau lebih secara berbaris.', 'Gerakan tangan sangat cepat dan serempak.', 'Dijuluki "tarian seribu tangan".']],
+            [
+                'Rumah Gadang', 'Sumatera Barat',
+                'Bangunan ini beratap melengkung runcing seperti tanduk kerbau dan menjadi rumah adat utama salah satu suku di Sumatera.',
+                ['Atapnya disebut gonjong, jumlahnya selalu ganjil.', 'Terdiri atas bilangan ganjil ruangan.', 'Fungsi utamanya sebagai rumah adat suku Minangkabau.'],
+            ],
+            [
+                'Tari Kecak', 'Bali',
+                'Pertunjukan ini hampir tanpa alat musik; suaranya berasal dari puluhan orang yang duduk melingkar.',
+                ['Diiringi bunyi "cak-cak-cak" secara bersamaan.', 'Ditarik oleh puluhan pria duduk melingkar.', 'Menceritakan kisah Ramayana.'],
+            ],
+            [
+                'Angklung', 'Jawa Barat',
+                'Alat musik ini terbuat dari bambu, dimainkan dengan cara digoyang, dan sudah diakui dunia.',
+                ['Berbahan bambu yang disusun dalam bingkai.', 'Setiap alat menghasilkan satu nada.', 'Diakui UNESCO sebagai warisan budaya takbenda.'],
+            ],
+            [
+                'Rumah Honai', 'Papua',
+                'Rumah ini mungil, beratap jerami, dan dibangun tanpa paku oleh salah satu suku di timur Indonesia.',
+                ['Berbentuk kubah dengan atap jerami.', 'Dibangun tanpa paku.', 'Rumah adat suku Dani.'],
+            ],
+            [
+                'Tari Saman', 'Aceh',
+                'Tarian ini dibawakan banyak penari secara berbaris dengan gerakan tangan yang sangat cepat.',
+                ['Ditarik oleh delapan orang atau lebih secara berbaris.', 'Gerakan tangan sangat cepat dan serempak.', 'Dijuluki "tarian seribu tangan".'],
+            ],
         ])->each(fn (array $m) => Mystery::create([
-            'answer' => $m[0], 'origin' => $m[1], 'clues' => $m[2], 'max_clues' => 3, 'time_limit' => 60,
+            'answer' => $m[0],
+            'origin' => $m[1],
+            'statement' => $m[2],
+            'clues' => $m[3],
+            'max_clues' => 3,
+            'points' => 300,
+            'clue_penalty' => 50,
+            'max_wrong_guesses' => 7,
+            'time_limit' => 60,
         ]));
 
         // Pertunjukan & sanggar
@@ -152,18 +185,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        foreach ($regencies->random(8) as $regency) {
-            Venue::create([
-                'name' => 'Sanggar Budaya '.$regency->name,
-                'slug' => str('sanggar-budaya-'.$regency->slug)->slug(),
-                'type' => fake()->randomElement(['sanggar_tari', 'gamelan', 'karawitan', 'komunitas']),
-                'address' => 'Jl. Kebudayaan No. '.fake()->numberBetween(1, 99).', '.$regency->name,
-                'regency_id' => $regency->id,
-                'phone' => fake()->phoneNumber(),
-                'description' => 'Tempat belajar seni dan budaya tradisional di '.$regency->name.'.',
-            ]);
-        }
-
         // Reputasi awal untuk leaderboard
         $users->each(fn (User $u) => $u->reputation()->create([
             'total_score' => fake()->numberBetween(100, 3000),
@@ -173,6 +194,24 @@ class DatabaseSeeder extends Seeder
         ]));
         $admin->reputation()->create(['total_score' => 0]);
 
-        $this->command->info('Seeded: 1 admin (admin@localculture.test / password), '.$users->count().' user demo, '.$islands->count().' pulau, '.$regencies->count().' kab/kota.');
+        // Materi budaya lengkap Kabupaten Kulon Progo.
+        $this->call(KulonProgoCultureSeeder::class);
+
+        // Materi budaya lengkap Kabupaten Bantul.
+        $this->call(BantulCultureSeeder::class);
+
+        // Materi budaya lengkap Kabupaten Sleman.
+        $this->call(SlemanCultureSeeder::class);
+
+        // Materi budaya lengkap Kabupaten Gunungkidul.
+        $this->call(GunungKidulCultureSeeder::class);
+
+        // Materi budaya lengkap Kota Yogyakarta.
+        $this->call(KotaJogjaCultureSeeder::class);
+
+        // Daftar sanggar & tempat latihan seni budaya DIY.
+        $this->call(VenueSanggarSeeder::class);
+
+        $this->command->info('Seeded: 1 admin ('.$adminEmail.' / '.$adminPassword.'), '.$users->count().' user demo, '.$islands->count().' pulau, '.$regencies->count().' kab/kota.');
     }
 }

@@ -22,7 +22,7 @@ services:
       # Isi manual bila ingin kunci yang sudah Anda miliki:
       # - APP_KEY=base64:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       - DB_CONNECTION=sqlite
-      - DB_DATABASE=/var/www/html/database/database.sqlite
+      - DB_DATABASE=/var/www/data/database.sqlite
       - DB_MIGRATE=true
       - SESSION_DRIVER=database
       - CACHE_STORE=database
@@ -31,7 +31,7 @@ services:
       # Data yang HARUS bertahan di luar kontainer:
       # - database SQLite (kuis, user, kunjungan, dsb.)
       # - file yang diunggah (avatar) & log
-      - cultureraya-database:/var/www/html/database
+      - cultureraya-database:/var/www/data
       # Berisi unggahan (avatar) + app_key. Folder cache/view/session
       # TIDAK ikut ter-mount, jadi tetap aman.
       - cultureraya-storage:/var/www/html/storage/app

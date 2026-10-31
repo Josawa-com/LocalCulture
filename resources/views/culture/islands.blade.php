@@ -636,6 +636,13 @@
                 opacity: .45;
             }
 
+            /* ---------- Kartu materi (KHUSUS MOBILE) ----------
+               Di desktop tersembunyi; di layar kecil menggantikan garis
+               sinar + foto mengambang dengan 5 kotak materi yang rapi. */
+            .t26-cards-mobile {
+                display: none;
+            }
+
             /* ---------- Responsif ---------- */
             @media screen and (max-width: 991px) {
                 .t26-layers { gap: 10em; }
@@ -658,44 +665,102 @@
             }
             @media screen and (max-width: 767px) {
                 .t26-heading { font-size: 1.35em; }
-                .t26-path-desktop { display: none; }
-                .t26-path-mobile { display: block; position: relative; width: 100%; opacity: .22; z-index: 0; }
-                .t26-path-mobile-dark {
-                    display: block;
-                    position: absolute;
-                    inset: 0 0 auto;
+
+                /* ============================================================
+                   MOBILE: garis sinar & foto mengambang DINONAKTIFKAN.
+                   Di layar sempit keduanya saling menimpa dan merusak
+                   tampilan. Diganti 5 kotak materi (lihat .t26-cards-mobile).
+                   Tampilan desktop tidak berubah sama sekali.
+                   ============================================================ */
+                .t26-path-desktop,
+                .t26-path-mobile { display: none !important; }
+
+                .t26-line-photo { display: none !important; }
+
+                .t26-layers { display: none !important; }
+
+                .t26-body {
+                    min-height: 0 !important;
+                    overflow: visible !important;
+                    padding: 0 1.125em 1.5em;
+                }
+
+                /* Kartu materi */
+                .t26-cards-mobile {
+                    display: grid;
+                    gap: .85em;
                     width: 100%;
-                    z-index: 1;
+                    padding-bottom: .5em;
+                    position: relative;
+                    z-index: 5;
                 }
-                .t26-body { min-height: 0; overflow: hidden; }
-                .t26-layers {
-                    position: static;
-                    transform: none;
-                    height: auto;
-                    gap: 8em;
-                    padding: 2em 0 4em;
+                .t26-card {
+                    display: block;
+                    padding: 1.05em 1.15em;
+                    border: 1px solid rgb(168 110 30 / .3);
+                    border-radius: 14px;
+                    background: var(--t26-white);
+                    box-shadow: 0 1px 2px rgb(31 24 20 / .05), 0 4px 12px rgb(31 24 20 / .05);
                 }
-                .t26-layer { font-size: .72em; height: auto; }
-                .t26-badge { display: none; }
+                .t26-card-head {
+                    display: flex;
+                    align-items: center;
+                    gap: .6em;
+                    margin-bottom: .55em;
+                }
+                .t26-card-num {
+                    display: grid;
+                    place-items: center;
+                    flex-shrink: 0;
+                    width: 1.8em;
+                    height: 1.8em;
+                    border-radius: 999px;
+                    background: var(--t26-orange);
+                    color: #fff;
+                    font-family: var(--t26-font-body);
+                    font-size: .82em;
+                    font-weight: 700;
+                    line-height: 1;
+                }
+                .t26-card-icon {
+                    display: grid;
+                    place-items: center;
+                    width: 2.35em;
+                    height: 2.35em;
+                    padding: .28em;
+                    border: 1px solid rgb(168 110 30 / .38);
+                    border-radius: 10px;
+                    background: rgb(168 110 30 / .06);
+                    flex-shrink: 0;
+                }
+                .t26-card-icon svg { display: block; width: 100%; height: 100%; }
+                .t26-card-title {
+                    margin: 0 0 .4em;
+                    font-family: var(--t26-font-heading);
+                    font-size: 1.05em;
+                    font-weight: 600;
+                    line-height: 1.2;
+                    text-transform: uppercase;
+                    color: var(--t26-orange);
+                }
+                .t26-card-desc {
+                    margin: 0;
+                    font-family: var(--t26-font-body);
+                    font-size: .8em;
+                    line-height: 1.65;
+                    color: var(--t26-black);
+                    opacity: .82;
+                }
 
-                /* Peta pulau di layar kecil: UKURAN PULAU TIDAK DIPERBESAR.
-                   Yang menyesuaikan hanya kotak penampungnya — kotak menyempit
-                   mengikuti lebar layar, lalu semua gambar ikut mengecil dengan
-                   proporsi yang sama, jadi tata letaknya identik dengan desktop
-                   dan tidak saling menimpa. */
-                .pulau-stage {
-                    /* Kotak memakai lebar penuh area konten (bukan dibatasi em). */
-                    max-width: 100%;
-                }
-
-                .t26-islands { padding: 2.5em .5em 3.5em; }
-                .t26-islands-inner { max-width: 100%; }                /* Beri kotak lebih banyak ruang di layar sempit, supaya
-                   gambarnya tetap sebesar mungkin tanpa mengubah proporsi. */
+                /* ============================================================
+                   MOBILE: peta pulau TETAP sama seperti desktop.
+                   Tata letak (posisi, rotasi, tumpukan) tidak diubah sama
+                   sekali — hanya seluruh kotak peta yang diperkecil seragam
+                   agar bentang Nusantara muat di lebar layar. Tiap gambar
+                   tetap menjadi tautan ke halaman pulau sesuai namanya.
+                   ============================================================ */
                 .t26-islands { padding: 2.5em .5em 3.5em; }
                 .t26-islands-inner { max-width: 100%; }
-                .pulau-tip { padding: .4em .7em; }
-                .pulau-tip-name { font-size: .8em; }
-                .pulau-tip-count { font-size: .7em; }
             }
             @media screen and (max-width: 479px) {
                 .t26-heading { font-size: 1.05em; }
@@ -821,35 +886,7 @@
                             {{-- Logo di TENGAH: selalu di atas garis, muncul dengan
                                 bounce dari garis (pola .service-svg two26) --}}
                             <div class="t26-svg" data-t26-svg>
-                                @if($n['icon'] === 'islands')
-                                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <circle cx="38" cy="42" r="18" stroke="#A86E1E" stroke-width="5"/>
-                                        <circle cx="66" cy="62" r="12" stroke="#A86E1E" stroke-width="5"/>
-                                        <path d="M12 78c12-8 24-8 36 0s24 8 36 0" stroke="#A86E1E" stroke-width="5" stroke-linecap="round"/>
-                                    </svg>
-                                @elseif($n['icon'] === 'heritage')
-                                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M20 44 50 18l30 26" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M28 44v34M72 44v34M20 78h60" stroke="#A86E1E" stroke-width="5" stroke-linecap="round"/>
-                                        <path d="M42 78V58h16v20" stroke="#A86E1E" stroke-width="5" stroke-linejoin="round"/>
-                                    </svg>
-                                @elseif($n['icon'] === 'exchange')
-                                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M22 38h44l-10-10M78 62H34l10 10" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="50" cy="50" r="34" stroke="#A86E1E" stroke-width="4" stroke-dasharray="6 8"/>
-                                    </svg>
-                                @elseif($n['icon'] === 'preserve')
-                                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M50 12 80 24v22c0 18-12 32-30 40-18-8-30-22-30-40V24Z" stroke="#A86E1E" stroke-width="5" stroke-linejoin="round"/>
-                                        <path d="m38 50 8 8 16-16" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                @else
-                                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <circle cx="50" cy="42" r="20" stroke="#A86E1E" stroke-width="5"/>
-                                        <path d="m62 58 14 22-12-4-4 12-14-22" stroke="#A86E1E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="50" cy="42" r="6" fill="#A86E1E"/>
-                                    </svg>
-                                @endif
+                                @include('culture.partials.narrative-icon', ['icon' => $n['icon']])
                             </div>
 
                             {{-- Teks KANAN --}}
@@ -860,6 +897,26 @@
                             </div>
                         </div>
                     </div>
+                @endforeach
+            </div>
+
+            {{-- ============================================================
+                 KHUSUS MOBILE: 5 kotak materi budaya.
+                 Garis sinar & foto mengambang disembunyikan di layar kecil
+                 (lihat media query), diganti kartu rapi ini.
+                 ============================================================ --}}
+            <div class="t26-cards-mobile">
+                @foreach($cultureNarratives as $n)
+                    <article class="t26-card">
+                        <div class="t26-card-head">
+                            <span class="t26-card-num">{{ $n['num'] }}</span>
+                            <span class="t26-card-icon">
+                                @include('culture.partials.narrative-icon', ['icon' => $n['icon']])
+                            </span>
+                        </div>
+                        <h3 class="t26-card-title">{{ $n['left'] }} {{ $n['right'] }}</h3>
+                        <p class="t26-card-desc">{{ $n['desc'] }}</p>
+                    </article>
                 @endforeach
             </div>
         </div>
@@ -892,7 +949,7 @@
                             aria-describedby="{{ $tipId }}">
 
                             <img src="{{ $map['url'] }}" alt="Peta {{ $map['label'] }}"
-                                 loading="lazy" decoding="async" width="480" height="320">
+                                 loading="eager" decoding="sync" width="480" height="320">
 
                             <span class="pulau-tip {{ $tipBelow ? 'pulau-tip--below' : '' }}" id="{{ $tipId }}" role="tooltip">
                                 <span class="pulau-tip-name">{{ $map['label'] }}</span>
